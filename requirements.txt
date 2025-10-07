@@ -1,0 +1,21 @@
+# Requirements pour ETL Pennylane → PostgreSQL
+
+# Gestion variables d'environnement
+python-dotenv==1.0.0
+
+# API et requêtes HTTP
+requests==2.31.0
+
+# Base de données PostgreSQL
+psycopg2-binary==2.9.9
+
+# Traitement de données
+pandas==2.2.0
+numpy==1.26.3
+
+# Planification
+schedule==1.2.1
+
+# Utilitaires
+python-dateutil==2.8.2
+pytz==2024.1

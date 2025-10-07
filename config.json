@@ -1,0 +1,65 @@
+{
+  "comment": "Configuration principale - Les secrets sont dans .env",
+
+  "endpoints": {
+    "comment": "Liste des endpoints Pennylane à synchroniser",
+    "enabled": [
+      {
+        "name": "invoices",
+        "endpoint": "/customer_invoices",
+        "table_name": "invoices",
+        "incremental": true,
+        "date_field": "updated_at"
+      },
+      {
+        "name": "suppliers",
+        "endpoint": "/suppliers",
+        "table_name": "suppliers",
+        "incremental": true,
+        "date_field": "updated_at"
+      },
+      {
+        "name": "customers",
+        "endpoint": "/customers",
+        "table_name": "customers",
+        "incremental": true,
+        "date_field": "updated_at"
+      },
+      {
+        "name": "transactions",
+        "endpoint": "/transactions",
+        "table_name": "transactions",
+        "incremental": true,
+        "date_field": "date"
+      },
+      {
+        "name": "journal_entries",
+        "endpoint": "/journal_entries",
+        "table_name": "journal_entries",
+        "incremental": true,
+        "date_field": "date"
+      },
+      {
+        "name": "accounts",
+        "endpoint": "/plan_items",
+        "table_name": "accounts",
+        "incremental": false,
+        "date_field": null
+      },
+      {
+        "name": "categories",
+        "endpoint": "/categories",
+        "table_name": "categories",
+        "incremental": false,
+        "date_field": null
+      },
+      {
+        "name": "payment_methods",
+        "endpoint": "/payment_methods",
+        "table_name": "payment_methods",
+        "incremental": false,
+        "date_field": null
+      }
+    ]
+  }
+}
