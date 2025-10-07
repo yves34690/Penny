@@ -1,0 +1,119 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8 black pytest
+
+    - name: Lint with flake8
+      run: |
+        # Stop build if there are Python syntax errors or undefined names
+        flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Check code formatting with black
+      run: |
+        black --check src
+
+    - name: Test Python imports
+      run: |
+        cd src
+        python -c "from config_loader import load_full_config, get_env"
+        python -c "from pennylane_api import PennylaneAPI"
+        python -c "from database import PostgresDatabase"
+        python -c "from transformations import DataTransformer"
+
+    - name: Check .env not committed
+      run: |
+        if [ -f .env ]; then
+          echo "ERROR: .env should not be committed to repository"
+          exit 1
+        fi
+        echo "✓ .env not present (good)"
+
+    - name: Validate .env.example
+      run: |
+        if [ ! -f .env.example ]; then
+          echo "ERROR: .env.example missing"
+          exit 1
+        fi
+        echo "✓ .env.example exists"
+
+    - name: Validate config.json
+      run: |
+        python -c "import json; json.load(open('config.json'))"
+        echo "✓ config.json is valid JSON"
+
+    - name: Check Docker Compose config
+      run: |
+        docker compose config > /dev/null
+        echo "✓ docker-compose.yml is valid"
+
+  security-check:
+    name: Security Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install safety
+      run: pip install safety
+
+    - name: Check for security vulnerabilities
+      run: |
+        safety check --file requirements.txt || true
+
+  docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install MkDocs and dependencies
+      run: |
+        pip install mkdocs-material pymdown-extensions
+
+    - name: Build documentation
+      run: |
+        mkdocs build --strict
+
+    - name: Deploy to GitHub Pages
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        mkdocs gh-deploy --force

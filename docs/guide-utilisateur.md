@@ -394,57 +394,6 @@ cd src && python main.py full
 
 ---
 
-## 🤖 GitHub Actions (CI/CD)
-
-### Qu'est-ce que c'est ?
-
-GitHub Actions exécute automatiquement des tests à chaque push/pull request.
-
-### Workflows actifs
-
-#### 1. **CI/CD Pipeline** (`.github/workflows/ci.yml`)
-
-**Exécuté à chaque push sur `main`**
-
-✅ **Lint & Test**
-- Vérification syntaxe Python (flake8)
-- Formatage code (black)
-- Test imports modules
-- Validation config.json
-- Vérification .env non committé
-
-✅ **Security Check**
-- Scan vulnérabilités dépendances (safety)
-
-✅ **Build Documentation**
-- Génération site MkDocs
-- Déploiement GitHub Pages automatique
-
-#### 2. **Deploy Documentation** (`.github/workflows/deploy-docs.yml`)
-
-**Exécuté quand docs/ est modifié**
-
-- Déploiement automatique vers [yves34690.github.io/Penny](https://yves34690.github.io/Penny/)
-
-### Badges GitHub Actions
-
-Les badges README se mettent à jour automatiquement :
-
-![CI](https://github.com/yves34690/Penny/workflows/CI%2FCD%20Pipeline/badge.svg)
-
-### Voir résultats
-
-[github.com/yves34690/Penny/actions](https://github.com/yves34690/Penny/actions)
-
-### Pourquoi c'est utile ?
-
-- ✅ Détecte bugs avant utilisateurs
-- ✅ Garantit qualité code
-- ✅ Documentation toujours à jour
-- ✅ Confiance accrue (badge "passing")
-
----
-
 ## 🔮 Évolutions futures
 
 ### Version actuelle : 1.0
@@ -454,8 +403,6 @@ Les badges README se mettent à jour automatiquement :
 - [x] Planificateur 10 min
 - [x] Gestion .env sécurisée
 - [x] Documentation complète
-- [x] GitHub Pages
-- [x] CI/CD GitHub Actions
 
 ### Prochaines versions
 
@@ -463,7 +410,6 @@ Les badges README se mettent à jour automatiquement :
 - [ ] Parallélisation extraction multi-endpoints
 - [ ] Cache local pour réduire appels API
 - [ ] Notifications email en cas d'erreur
-- [ ] Tests unitaires avec pytest
 
 #### v1.2 - Transformations avancées
 - [ ] Bibliothèque transformations réutilisables

@@ -1,10 +1,22 @@
 # ETL Pennylane → PostgreSQL → Power BI
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Python](https://img.shields.io/badge/python-3.12+-blue.svg)
-![PostgreSQL](https://img.shields.io/badge/postgresql-16-blue.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![PostgreSQL](https://img.shields.io/badge/postgresql-16-blue.svg)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/docker-required-blue.svg)](https://www.docker.com/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![GitHub last commit](https://img.shields.io/github/last-commit/yves34690/Penny)](https://github.com/yves34690/Penny/commits/main)
+[![GitHub issues](https://img.shields.io/github/issues/yves34690/Penny)](https://github.com/yves34690/Penny/issues)
+[![GitHub stars](https://img.shields.io/github/stars/yves34690/Penny)](https://github.com/yves34690/Penny/stargazers)
+[![Documentation](https://img.shields.io/badge/docs-mkdocs-blue)](https://yves34690.github.io/Penny/)
 
 Solution complète pour extraire les données Pennylane, les stocker dans PostgreSQL et les connecter à Power BI avec actualisation toutes les 10 minutes.
+
+---
+
+**🌐 [Documentation complète](https://yves34690.github.io/Penny/)** | **📖 [Guide utilisateur](GUIDE_UTILISATEUR.md)** | **🚀 [Démarrage rapide](GUIDE_DEMARRAGE.md)**
+
+---
 
 ## 🎯 Objectifs
 

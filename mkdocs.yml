@@ -1,0 +1,84 @@
+site_name: Penny - ETL Pennylane
+site_description: Solution ETL pour Pennylane → PostgreSQL → Power BI
+site_author: yves34690
+site_url: https://yves34690.github.io/Penny/
+
+repo_name: yves34690/Penny
+repo_url: https://github.com/yves34690/Penny
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: fr
+  palette:
+    # Light mode
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Mode sombre
+    # Dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Mode clair
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search:
+      lang: fr
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Accueil: index.md
+  - Guides:
+      - Démarrage rapide: guide-demarrage.md
+      - Guide utilisateur: guide-utilisateur.md
+      - Configuration: configuration.md
+  - Référence:
+      - API Reference: api-reference.md
+      - Architecture: architecture.md
+  - Support:
+      - Dépannage: depannage.md
+      - FAQ: faq.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/yves34690/Penny
+  version:
+    provider: mike
+
+copyright: Copyright &copy; 2025 yves34690
