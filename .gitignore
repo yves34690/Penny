@@ -25,17 +25,17 @@ wheels/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-*.ipynb
 
 # Logs
 logs/
 *.log
 
-# Data
-data/
-*.csv
-*.xlsx
-*.parquet
+# Data files (but keep notebooks)
+data/**/*.csv
+data/**/*.xlsx
+data/**/*.parquet
+data/**/*.json
+data/**/*.pkl
 
 # Configuration sensible et secrets
 .env
