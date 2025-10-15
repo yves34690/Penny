@@ -164,11 +164,26 @@ cp .env.example .env
 # 4. Démarrer PostgreSQL
 docker-compose up -d
 
-# 5. Lancer première synchronisation (8 min)
+# 5. Vérifier que tout est OK (optionnel mais recommandé)
+python verify_setup.py
+
+# 6. Lancer première synchronisation (8 min)
 python src/notebook_scheduler.py
 ```
 
 **✅ C'est tout !** Vos données sont maintenant dans PostgreSQL.
+
+### 🔍 Vérification de la configuration
+
+Le script `verify_setup.py` vérifie automatiquement :
+- ✅ Fichier `.env` présent et correctement configuré
+- ✅ Docker démarré (PostgreSQL + pgAdmin)
+- ✅ Connexion PostgreSQL fonctionnelle
+- ✅ Connexion Redshift (Data Warehouse Pennylane)
+- ✅ Packages Python installés
+- ✅ Notebooks présents
+
+**Si tout est vert**, vous pouvez lancer le scheduler en toute confiance !
 
 ### Connexion Power BI
 
@@ -406,6 +421,16 @@ SELECT 'general_ledger', COUNT(*) FROM pennylane.general_ledger;
 ---
 
 ## 🐛 Dépannage
+
+### 🔍 Première étape : Lancer le diagnostic automatique
+
+```bash
+python verify_setup.py
+```
+
+Ce script vérifie automatiquement tous les composants et affiche les erreurs éventuelles.
+
+---
 
 ### ❌ Erreur : "Module 'papermill' not found"
 
