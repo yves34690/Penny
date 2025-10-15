@@ -68,10 +68,10 @@ Ce projet est conçu pour être utilisable **sans connaissance en programmation*
 
 | Profil | Utilisation | Documentation |
 |--------|-------------|---------------|
-| 🆕 **Débutant complet** | Installer Docker, lancer le scheduler, connecter Power BI | [GUIDE_DEBUTANT.md](GUIDE_DEBUTANT.md) |
+| 🆕 **Débutant complet** | Guide pas-à-pas avec captures d'écran | 👉 **[DEMARRAGE_RAPIDE.md](DEMARRAGE_RAPIDE.md)** ⭐ |
 | 👔 **Expert-comptable / DAF** | Personnaliser transformations via Jupyter Notebooks | [README_NOTEBOOK_SCHEDULER.md](README_NOTEBOOK_SCHEDULER.md) |
 | 📊 **Data Analyst** | Modifier notebooks Python, ajouter colonnes calculées | [README_NOTEBOOK_SCHEDULER.md](README_NOTEBOOK_SCHEDULER.md) |
-| 🐍 **Développeur Python** | Comprendre architecture, choisir scheduler optimal | [CHOIX_SCHEDULER.md](CHOIX_SCHEDULER.md) |
+| 🐍 **Développeur Python** | Comprendre architecture, automatisation Docker | [GUIDE_AUTOMATION.md](GUIDE_AUTOMATION.md) |
 
 ---
 
@@ -147,7 +147,29 @@ Ce projet est conçu pour être utilisable **sans connaissance en programmation*
 - **Python 3.12+** installé
 - **Docker Desktop** installé ([Guide installation](GUIDE_INSTALLATION_DOCKER.md))
 
+### 🖥️ Comment ouvrir un terminal ?
+
+**Pour exécuter les commandes ci-dessous, vous devez ouvrir un terminal :**
+
+**Sur Windows** :
+1. Appuyez sur la touche **Windows**
+2. Tapez `PowerShell`
+3. Cliquez sur **Windows PowerShell**
+4. Une fenêtre bleue s'ouvre → c'est votre terminal !
+
+**Sur Mac** :
+1. Appuyez sur **Cmd + Espace**
+2. Tapez `Terminal`
+3. Appuyez sur **Entrée**
+
+**Sur Linux** :
+- Appuyez sur **Ctrl + Alt + T**
+
+---
+
 ### Installation
+
+**Dans votre terminal**, tapez ces commandes une par une :
 
 ```bash
 # 1. Cloner le projet
@@ -159,19 +181,39 @@ pip install -r requirements.txt
 
 # 3. Configurer vos credentials
 cp .env.example .env
-# Éditer .env et ajouter vos clés Pennylane
+# Ouvrez le fichier .env avec un éditeur de texte (Notepad, VS Code)
+# et ajoutez vos clés Pennylane
 
-# 4. Démarrer PostgreSQL
+# 4. Démarrer le système complet (PostgreSQL + Scheduler automatique)
 docker-compose up -d
 
 # 5. Vérifier que tout est OK (optionnel mais recommandé)
 python verify_setup.py
-
-# 6. Lancer première synchronisation (8 min)
-python src/notebook_scheduler.py
 ```
 
-**✅ C'est tout !** Vos données sont maintenant dans PostgreSQL.
+**✅ C'est tout !** Le système est maintenant **100% automatique** :
+- ✅ PostgreSQL démarré sur le port 5433
+- ✅ Scheduler automatique en cours d'exécution
+- ✅ Synchronisation initiale en cours (8 min)
+- ✅ Prochaine synchronisation dans 2 heures
+
+**📊 Suivre les logs en temps réel** :
+```bash
+docker-compose logs scheduler -f
+```
+*Appuyez sur Ctrl + C pour arrêter l'affichage*
+
+**🔧 Arrêter le système** :
+```bash
+docker-compose down
+```
+
+**🔄 Redémarrer après un reboot du PC** :
+```bash
+cd C:\Penny && docker-compose up -d
+```
+
+**🎯 Pour plus de détails sur l'automatisation** : Voir [GUIDE_AUTOMATION.md](GUIDE_AUTOMATION.md)
 
 ### 🔍 Vérification de la configuration
 
@@ -197,6 +239,66 @@ Power BI Desktop
 ```
 
 **Guide complet** : [GUIDE_POWERBI_CONNEXION.md](GUIDE_POWERBI_CONNEXION.md)
+
+---
+
+## 🤖 Automatisation complète avec Docker
+
+### Mode automatique (Recommandé)
+
+**Une seule commande** pour tout démarrer :
+
+```bash
+docker-compose up -d
+```
+
+**Ce qui se passe automatiquement** :
+1. ✅ PostgreSQL démarre (port 5433)
+2. ✅ pgAdmin démarre ([http://localhost:5050](http://localhost:5050))
+3. ✅ Le scheduler s'exécute immédiatement (première synchronisation)
+4. ✅ Ensuite, synchronisation automatique toutes les 2 heures
+5. ✅ Redémarrage automatique en cas de crash ou reboot PC
+
+**Aucune intervention nécessaire !** Le système tourne en arrière-plan 24/7.
+
+### Vérifier que tout fonctionne
+
+```bash
+# État des conteneurs
+docker-compose ps
+
+# Logs en temps réel du scheduler
+docker-compose logs scheduler -f
+
+# Logs depuis le dernier démarrage
+docker-compose logs scheduler --tail 100
+```
+
+**Sortie attendue** :
+```
+[DEMARRAGE] Notebook Scheduler Pennylane
+[SYNC] DEBUT synchronisation
+[OK] customers: 7 lignes exportées
+[OK] analytical_ledger: 2251 lignes exportées
+...
+[SYNC] Succès: 12/12 | Erreurs: 0
+[CRON] Prochaine exécution dans 2h
+```
+
+### Gestion du système
+
+```bash
+# Arrêter tout
+docker-compose down
+
+# Redémarrer
+docker-compose restart
+
+# Forcer une synchronisation immédiate
+docker-compose restart scheduler
+```
+
+**📖 Documentation complète** : [GUIDE_AUTOMATION.md](GUIDE_AUTOMATION.md)
 
 ---
 
@@ -334,7 +436,36 @@ python src/notebook_scheduler.py
 
 ## 📊 Utilisation
 
-### Mode 1 : Synchronisation manuelle (test)
+### ⭐ Mode 1 : Docker Automatique (Recommandé pour production)
+
+```bash
+# Démarrer le système complet
+docker-compose up -d
+```
+
+**Avantages** :
+- ✅ Synchronisation automatique toutes les 2 heures
+- ✅ Redémarrage automatique en cas d'erreur
+- ✅ Redémarre au boot (si Docker Desktop configuré)
+- ✅ Pas besoin de garder un terminal ouvert
+
+**Suivre l'exécution** :
+```bash
+docker-compose logs scheduler -f
+```
+
+**Arrêter** :
+```bash
+docker-compose down
+```
+
+📖 **Documentation complète** : [GUIDE_AUTOMATION.md](GUIDE_AUTOMATION.md)
+
+---
+
+### Mode 2 : Python manuel (pour tests ou développement)
+
+#### 2a. Synchronisation unique
 
 ```bash
 # Exécuter une fois tous les notebooks (8 min)
@@ -343,11 +474,12 @@ python src/notebook_scheduler.py
 
 **Arrêter après 1 synchro** : `Ctrl+C`
 
-### Mode 2 : Synchronisation automatique (production)
+#### 2b. Synchronisation continue
 
 ```bash
 # Lancer en continu (synchro toutes les 2h)
 python src/notebook_scheduler.py
+# Laisser tourner dans le terminal
 ```
 
 **Logs en temps réel** :
@@ -362,6 +494,10 @@ python src/notebook_scheduler.py
 ```
 
 **Arrêter** : `Ctrl+C`
+
+**Inconvénient** : Vous devez laisser le terminal ouvert. Si vous le fermez, la synchro s'arrête.
+
+---
 
 ### Mode 3 : Exécuter un seul notebook
 

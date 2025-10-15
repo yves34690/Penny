@@ -28,6 +28,7 @@ wheels/
 
 # Notebooks exécutés (garder uniquement les notebooks sources)
 logs/executed_notebooks/
+data/outputs/
 
 # Logs (garder le dossier mais pas les fichiers)
 logs/*.log

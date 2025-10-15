@@ -24,6 +24,7 @@ schedule==1.2.1
 papermill==2.6.0
 nbformat==5.10.4
 nbconvert==7.16.6
+ipykernel==6.29.0
 
 # Utilitaires
 python-dateutil==2.8.2

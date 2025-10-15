@@ -1,0 +1,51 @@
+# Fichiers Git
+.git
+.gitignore
+.gitattributes
+
+# Environnements virtuels Python
+venv/
+env/
+ENV/
+.venv
+
+# Fichiers de configuration sensibles
+.env
+.env.local
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Logs
+logs/
+*.log
+
+# Documentation et tests (pas nécessaires dans le conteneur)
+docs/
+tests/
+*.md
+!requirements.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Données volumineuses (optionnel)
+*.csv
+*.xlsx
+*.parquet
+
+# Notebooks executés (outputs temporaires)
+.ipynb_checkpoints/
