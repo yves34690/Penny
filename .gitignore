@@ -26,8 +26,11 @@ wheels/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# Logs
-logs/
+# Notebooks exécutés (garder uniquement les notebooks sources)
+logs/executed_notebooks/
+
+# Logs (garder le dossier mais pas les fichiers)
+logs/*.log
 *.log
 
 # Data files (but keep notebooks)
@@ -55,3 +58,10 @@ docker-compose.override.yml
 # OS
 .DS_Store
 Thumbs.db
+
+# Fichiers temporaires Windows
+NUL
+*.tmp
+
+# Claude Code local settings
+.claude/settings.local.json

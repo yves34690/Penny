@@ -12,9 +12,18 @@ psycopg2-binary==2.9.9
 # Traitement de données
 pandas==2.2.0
 numpy==1.26.3
+pyarrow>=11.0.0
+
+# Base de données ORM
+SQLAlchemy==2.0.25
 
 # Planification
 schedule==1.2.1
+
+# Exécution notebooks
+papermill==2.6.0
+nbformat==5.10.4
+nbconvert==7.16.6
 
 # Utilitaires
 python-dateutil==2.8.2

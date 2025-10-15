@@ -1,372 +1,549 @@
-# ETL Pennylane → PostgreSQL → Power BI
+# 🚀 ETL Pennylane Open-Source
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![PostgreSQL](https://img.shields.io/badge/postgresql-16-blue.svg)](https://www.postgresql.org/)
+[![PostgreSQL](https://img.shields.io/badge/postgresql-15-blue.svg)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/docker-required-blue.svg)](https://www.docker.com/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![GitHub last commit](https://img.shields.io/github/last-commit/yves34690/Penny)](https://github.com/yves34690/Penny/commits/main)
-[![GitHub issues](https://img.shields.io/github/issues/yves34690/Penny)](https://github.com/yves34690/Penny/issues)
 [![GitHub stars](https://img.shields.io/github/stars/yves34690/Penny)](https://github.com/yves34690/Penny/stargazers)
-[![Documentation](https://img.shields.io/badge/docs-mkdocs-blue)](https://yves34690.github.io/Penny/)
-
-Solution complète pour extraire les données Pennylane, les stocker dans PostgreSQL et les connecter à Power BI avec actualisation toutes les 10 minutes.
 
 ---
 
-**🌐 [Documentation complète](https://yves34690.github.io/Penny/)** | **📖 [Guide utilisateur](GUIDE_UTILISATEUR.md)** | **🚀 [Démarrage rapide](GUIDE_DEMARRAGE.md)**
+## 🎯 En une phrase
+
+**Synchronisez automatiquement vos données Pennylane vers PostgreSQL toutes les 2 heures, transformez-les dans Jupyter Notebooks, et connectez Power BI pour des analyses ultra-rapides.**
 
 ---
 
-## 🎯 Objectifs
+## ⭐ Pourquoi ce projet ?
 
-1. **Contourner la limite d'actualisation API Pennylane** (2h → 10 min)
-2. **Accélérer l'actualisation Power BI** en externalisant les transformations
-3. **Architecture scalable** pour gros volumes (millions de lignes)
-4. **Module réutilisable** : Partagez facilement via GitHub
+### Le problème
+
+Vous êtes **expert-comptable**, **DAF** ou **data analyst** et vous rencontrez ces difficultés :
+
+- **Actualisation Power BI = 30-60 minutes** à cause des transformations lourdes dans Power Query
+- **API Pennylane avec cache de 2 heures** pour les données comptables (grand livre, balance)
+- **Difficile de personnaliser** les transformations sans maîtriser le langage M de Power Query
+- **Impossible de réutiliser** les données transformées ailleurs (Excel, Tableau, Python)
+
+### La solution
+
+Ce projet ETL open-source résout tous ces problèmes :
+
+- ✅ **Actualisation Power BI = 2-5 minutes** (données pré-traitées)
+- ✅ **Transformations dans Jupyter Notebooks** (Python, facile à personnaliser)
+- ✅ **Synchronisation automatique toutes les 2 heures** (scheduler intelligent)
+- ✅ **Données centralisées dans PostgreSQL** (réutilisables partout)
+- ✅ **Architecture "Notebooks First"** : modifiez vos notebooks, le scheduler applique automatiquement
 
 ---
 
-## 📁 Structure du projet
+## 📊 Notre solution vs Power Query : Comparaison
+
+| Critère | **ETL Python + PostgreSQL** ⭐ | **Power Query Direct** |
+|---------|-------------------------------|------------------------|
+| ⏱️ **Temps actualisation** | **2-5 min** | 30-60 min |
+| 🎯 **Performance** | ⭐⭐⭐⭐⭐ Très rapide | ⭐⭐ Lent |
+| 📊 **Gros volumes** | ✅ Millions de lignes | ❌ ~500k lignes max |
+| 🔄 **Réutilisabilité** | ✅ Excel, Tableau, Python | ❌ Uniquement Power BI |
+| 👥 **Collaboration** | ✅ Base centralisée | ❌ Fichier .pbix par personne |
+| 🎨 **Personnalisation** | ✅ Jupyter (visuel) | ⚠️ Langage M (complexe) |
+| 🔧 **Maintenance** | ✅ 1 modification → tous en profitent | ❌ Modifier chaque .pbix |
+| 💾 **Charge Power BI** | Minimale | Très élevée |
+| 📈 **Scalabilité** | ⭐⭐⭐⭐⭐ (serveur) | ⭐⭐ (PC utilisateur) |
+| 🔄 **Fréquence actualisation** | Toutes les 2h automatique | Manuel ou 8x/jour max |
+
+**💡 Cas d'usage réel** : Cabinet avec 200k lignes comptables
+- **Sans ETL** : 45 min d'actualisation, PC bloqué
+- **Avec ETL** : 3 min d'actualisation, PC libre
+- **Gain** : **42 minutes × 10 actualisations/jour = 7h gagnées/jour** ⏱️
+
+**👉 Voir comparaison complète** : [GUIDE_POWERBI_CONNEXION.md](GUIDE_POWERBI_CONNEXION.md#1-etl-pythonpostgresql-vs-power-query--quel-choix-)
+
+---
+
+## 🎓 Accessible à TOUS
+
+Ce projet est conçu pour être utilisable **sans connaissance en programmation**.
+
+| Profil | Utilisation | Documentation |
+|--------|-------------|---------------|
+| 🆕 **Débutant complet** | Installer Docker, lancer le scheduler, connecter Power BI | [GUIDE_DEBUTANT.md](GUIDE_DEBUTANT.md) |
+| 👔 **Expert-comptable / DAF** | Personnaliser transformations via Jupyter Notebooks | [README_NOTEBOOK_SCHEDULER.md](README_NOTEBOOK_SCHEDULER.md) |
+| 📊 **Data Analyst** | Modifier notebooks Python, ajouter colonnes calculées | [README_NOTEBOOK_SCHEDULER.md](README_NOTEBOOK_SCHEDULER.md) |
+| 🐍 **Développeur Python** | Comprendre architecture, choisir scheduler optimal | [CHOIX_SCHEDULER.md](CHOIX_SCHEDULER.md) |
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      PENNYLANE                              │
+│  ┌──────────────────┐         ┌──────────────────┐        │
+│  │   API REST       │         │  Data Sharing    │        │
+│  │ (5 tables temps  │         │  (Redshift)      │        │
+│  │  réel)           │         │  (comptabilité)  │        │
+│  └────────┬─────────┘         └────────┬─────────┘        │
+└───────────┼──────────────────────────────┼──────────────────┘
+            │                              │
+            └──────────────┬───────────────┘
+                           │
+                  📥 EXTRACTION (2h)
+                           │
+            ┌──────────────▼───────────────┐
+            │   NOTEBOOK SCHEDULER         │
+            │   (src/notebook_scheduler.py)│
+            │   Exécute 16 notebooks       │
+            └──────────────┬───────────────┘
+                           │
+            ┌──────────────▼───────────────────────────────┐
+            │      JUPYTER NOTEBOOKS                       │
+            │      (data/API Publique/*.ipynb)             │
+            │  ┌─────────────────────────────────────┐    │
+            │  │ 1. Import_customers.ipynb           │    │
+            │  │ 2. Import_analytical_ledger.ipynb   │    │
+            │  │ 3. Import_general_ledger.ipynb      │    │
+            │  │ ... 16 notebooks au total           │    │
+            │  │                                      │    │
+            │  │ 🎨 VOUS MODIFIEZ ICI :              │    │
+            │  │    - Ajout colonnes calculées       │    │
+            │  │    - Transformations métier         │    │
+            │  │    - Filtres personnalisés          │    │
+            │  └─────────────────────────────────────┘    │
+            └──────────────┬───────────────────────────────┘
+                           │
+                  💾 CHARGEMENT
+                           │
+            ┌──────────────▼───────────────┐
+            │   POSTGRESQL (Docker)        │
+            │   Schema: pennylane          │
+            │   12 tables transformées     │
+            └──────────────┬───────────────┘
+                           │
+                ┌──────────┴──────────┐
+                │                     │
+        ┌───────▼───────┐     ┌──────▼──────┐
+        │   POWER BI    │     │   JUPYTER   │
+        │   Desktop     │     │   Excel     │
+        └───────────────┘     └─────────────┘
+```
+
+**Philosophie "Notebooks First"** :
+1. Vous modifiez un notebook Jupyter (ajout colonnes, calculs)
+2. Vous testez et visualisez immédiatement
+3. Le scheduler applique automatiquement vos changements toutes les 2h
+4. Power BI se connecte aux données finales
+
+**➡️ Aucune duplication de code !** Les notebooks sont la **seule source de vérité**.
+
+---
+
+## ⚡ Quick Start (5 minutes)
+
+### Prérequis
+
+- **Windows, Mac ou Linux**
+- **Python 3.12+** installé
+- **Docker Desktop** installé ([Guide installation](GUIDE_INSTALLATION_DOCKER.md))
+
+### Installation
+
+```bash
+# 1. Cloner le projet
+git clone https://github.com/yves34690/Penny.git
+cd Penny
+
+# 2. Installer dépendances Python
+pip install -r requirements.txt
+
+# 3. Configurer vos credentials
+cp .env.example .env
+# Éditer .env et ajouter vos clés Pennylane
+
+# 4. Démarrer PostgreSQL
+docker-compose up -d
+
+# 5. Lancer première synchronisation (8 min)
+python src/notebook_scheduler.py
+```
+
+**✅ C'est tout !** Vos données sont maintenant dans PostgreSQL.
+
+### Connexion Power BI
+
+```
+Power BI Desktop
+→ Obtenir les données
+→ PostgreSQL
+→ Serveur: localhost:5433
+→ Base: pennylane_db
+→ Sélectionner schema "pennylane"
+```
+
+**Guide complet** : [GUIDE_POWERBI_CONNEXION.md](GUIDE_POWERBI_CONNEXION.md)
+
+---
+
+## 📂 Structure du projet (simplifiée)
 
 ```
 Penny/
-├── .env.example                # Template variables d'environnement
-├── .env                        # VOS secrets (jamais commité)
-├── docker-compose.yml          # Configuration PostgreSQL
-├── config.json                 # Configuration endpoints
-├── requirements.txt            # Dépendances Python
-├── src/
-│   ├── config_loader.py       # Gestion .env et configuration
-│   ├── pennylane_api.py       # Client API avec rate limiting
-│   ├── database.py            # Gestion PostgreSQL
-│   ├── transformations.py     # Transformations basiques
-│   ├── main.py                # Script ETL principal
-│   └── scheduler.py           # Planificateur automatique
-├── init_db/
-│   └── 01_init_schema.sql     # Initialisation base de données
-├── logs/                       # Logs d'exécution
-└── data/                       # Données temporaires (optionnel)
+├── 📄 .env.example                      # Template credentials (à copier)
+├── 📄 .env                              # VOS secrets (jamais commité)
+├── 🐳 docker-compose.yml                # PostgreSQL + pgAdmin
+├── 📦 requirements.txt                  # Dépendances Python
+│
+├── 📁 src/
+│   ├── 🤖 notebook_scheduler.py         # ⭐ SCHEDULER PRINCIPAL (exécute notebooks)
+│   └── 🔌 pennylane_api_client.py       # Client API Pennylane
+│
+├── 📁 data/API Publique/
+│   ├── 📓 Import_customers.ipynb        # 🎨 NOTEBOOKS À PERSONNALISER
+│   ├── 📓 Import_analytical_ledger.ipynb
+│   ├── 📓 Import_general_ledger.ipynb
+│   └── ... (16 notebooks au total)
+│
+├── 📁 logs/
+│   ├── executed_notebooks/              # Historique exécutions notebooks
+│   └── notebook_scheduler.log           # Logs du scheduler
+│
+└── 📚 Documentation/
+    ├── GUIDE_DEBUTANT.md                # 🆕 Démarrage sans code
+    ├── README_NOTEBOOK_SCHEDULER.md     # Architecture "Notebooks First"
+    ├── CHOIX_SCHEDULER.md               # Notebook vs Unified scheduler
+    ├── GUIDE_INSTALLATION_DOCKER.md     # Installer Docker pas-à-pas
+    └── GUIDE_POWERBI_CONNEXION.md       # Connecter Power BI + Comparaison ETL vs Power Query
 ```
+
+**✨ Seulement ~25 fichiers essentiels** (nettoyé de tout superflu)
 
 ---
 
-## 🚀 Installation rapide
+## 🎯 Tables disponibles
 
-### 1. Cloner le dépôt
+| Table | Source | Description | Lignes (exemple) |
+|-------|--------|-------------|------------------|
+| **customers** | API REST | Clients | 7 |
+| **suppliers** | API REST | Fournisseurs | 50 |
+| **customer_invoices** | API REST | Factures clients | 12 |
+| **supplier_invoices** | API REST | Factures fournisseurs | 273 |
+| **bank_accounts** | API REST | Comptes bancaires | 5 |
+| **analytical_ledger** | Redshift | Grand livre analytique | 2 251 |
+| **general_ledger** | Redshift | Grand livre général | 2 233 |
+| **trial_balance** | Redshift | Balance générale | 163 |
+| **bank_transactions** | Redshift | Transactions bancaires | 325 |
+| **fiscal_years** | Redshift | Exercices fiscaux | 3 |
+| **tax_declarations** | Redshift | Déclarations fiscales | 12 |
+| **vat_declarations** | Redshift | Déclarations TVA | 18 |
 
-```bash
-git clone https://github.com/votre-username/pennylane-etl.git
-cd pennylane-etl
-```
-
-### 2. Créer votre fichier .env
-
-```bash
-# Copier le template
-cp .env.example .env
-
-# Éditer avec vos vraies valeurs
-notepad .env  # Windows
-# ou
-nano .env     # Linux/Mac
-```
-
-**Variables OBLIGATOIRES à configurer dans `.env` :**
-
-```bash
-PENNYLANE_API_KEY=votre_vraie_cle_api_pennylane
-POSTGRES_PASSWORD=votre_mot_de_passe_securise
-```
-
-### 3. Installer les dépendances Python
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Démarrer PostgreSQL
-
-```bash
-docker-compose up -d
-```
-
-Vérifier :
-
-```bash
-docker ps
-```
-
-### 5. Lancer première extraction
-
-```bash
-cd src
-python main.py full
-```
-
-✅ **Vous êtes prêt !**
+**Total : 12 tables** (transformées avec colonnes calculées : PCG_1, PCG_2, Nature_Compte, Solde, etc.)
 
 ---
 
-## 🔐 Gestion des secrets
+## 🔐 Sécurité des credentials
 
-### Architecture de sécurité
+### Architecture
 
 - **`.env.example`** : Template public (committé sur GitHub)
-- **`.env`** : VOS secrets (ignoré par Git, jamais committé)
-- **`config.json`** : Configuration publique (endpoints, paramètres)
+- **`.env`** : VOS secrets (ignoré par Git, **jamais commité**)
 
-### Variables d'environnement (.env)
+### Variables obligatoires
 
-| Variable | Description | Requis |
-|----------|-------------|--------|
-| `PENNYLANE_API_KEY` | Clé API Pennylane | ✅ OUI |
-| `POSTGRES_PASSWORD` | Mot de passe PostgreSQL | ✅ OUI |
-| `POSTGRES_HOST` | Host PostgreSQL | Non (défaut: localhost) |
-| `POSTGRES_PORT` | Port PostgreSQL | Non (défaut: 5432) |
-| `SCHEDULER_INTERVAL_MINUTES` | Intervalle actualisation | Non (défaut: 10) |
-| `LOG_LEVEL` | Niveau de log | Non (défaut: INFO) |
+Copiez `.env.example` vers `.env` et configurez :
 
-**Voir [.env.example](.env.example) pour la liste complète.**
+```bash
+# Pennylane API REST (5 tables temps réel)
+PENNYLANE_API_TOKEN=votre_token_api_rest
+
+# Pennylane Data Sharing (Redshift, 7 tables comptables)
+PENNYLANE_DATA_SHARING_KEY=votre_cle_redshift
+REDSHIFT_HOST=redshift-pennylane.123456789.eu-west-1.redshift.amazonaws.com
+REDSHIFT_PORT=5439
+REDSHIFT_DATABASE=votre_database
+REDSHIFT_USER=votre_user
+
+# PostgreSQL local (Docker)
+POSTGRES_USER=pennylane_user
+POSTGRES_PASSWORD=votre_mot_de_passe_securise
+POSTGRES_DB=pennylane_db
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5433
+```
+
+**⚠️ Important** : Le fichier `.gitignore` est configuré pour **ne jamais commiter `.env`**.
+
+---
+
+## 🎨 Personnaliser vos transformations
+
+### Étape 1 : Ouvrir Jupyter
+
+```bash
+jupyter notebook
+```
+
+### Étape 2 : Modifier un notebook
+
+Exemple : Ajouter une colonne dans `Import_analytical_ledger.ipynb`
+
+```python
+# Charger données brutes depuis Redshift
+df = pd.read_sql("SELECT * FROM analytical_ledger", redshift_engine)
+
+# 🎨 AJOUTEZ VOS TRANSFORMATIONS ICI
+df['montant_ht_euros'] = df['amount_cents'] / 100
+df['trimestre'] = df['date'].dt.quarter
+df['est_achat'] = df['PCG_1'] == '6'
+
+# Sauvegarder dans PostgreSQL
+df.to_sql('analytical_ledger', postgres_engine,
+          schema='pennylane', if_exists='replace', index=False)
+```
+
+### Étape 3 : Tester immédiatement
+
+**Cell** → **Run All** : Vous voyez le résultat instantanément
+
+### Étape 4 : Le scheduler applique automatiquement
+
+```bash
+python src/notebook_scheduler.py
+```
+
+À chaque exécution (toutes les 2h), **votre notebook modifié est exécuté** et PostgreSQL est mis à jour.
+
+**✅ Aucune modification de code Python nécessaire !** Le scheduler détecte automatiquement vos notebooks.
 
 ---
 
 ## 📊 Utilisation
 
-### Mode 1 : Extraction manuelle
-
-#### Extraction complète (première fois)
+### Mode 1 : Synchronisation manuelle (test)
 
 ```bash
-cd src
-python main.py full
+# Exécuter une fois tous les notebooks (8 min)
+python src/notebook_scheduler.py
 ```
 
-#### Extraction incrémentielle (uniquement nouvelles données)
+**Arrêter après 1 synchro** : `Ctrl+C`
+
+### Mode 2 : Synchronisation automatique (production)
 
 ```bash
-python main.py incremental
+# Lancer en continu (synchro toutes les 2h)
+python src/notebook_scheduler.py
 ```
 
-### Mode 2 : Planificateur automatique (10 min)
+**Logs en temps réel** :
 
-```bash
-cd src
-python scheduler.py
+```
+[2025-10-15 14:00:00] 🚀 Démarrage du Notebook Scheduler
+[2025-10-15 14:00:05] ✅ customers - 7 lignes chargées
+[2025-10-15 14:01:20] ✅ analytical_ledger - 2251 lignes chargées
+...
+[2025-10-15 14:08:15] 🎉 Synchronisation complète terminée (8m 15s)
+[2025-10-15 14:08:15] ⏰ Prochaine synchro : 2025-10-15 16:00:00
 ```
 
 **Arrêter** : `Ctrl+C`
 
+### Mode 3 : Exécuter un seul notebook
+
+```bash
+# Lancer Jupyter
+jupyter notebook
+
+# Ouvrir data/API Publique/Import_customers.ipynb
+# Cell → Run All
+```
+
 ---
 
-## 🔧 Gestion de PostgreSQL
+## 🔧 Gestion PostgreSQL
 
 ### Interface graphique pgAdmin
 
-[http://localhost:5050](http://localhost:5050)
+**URL** : [http://localhost:5050](http://localhost:5050)
 
-Identifiants par défaut (modifiables dans `.env`) :
+**Credentials** (par défaut) :
 - Email : `admin@pennylane.local`
 - Password : `admin`
 
-### Connexion au serveur PostgreSQL
+### Connexion serveur PostgreSQL
 
-- **Host** : `localhost`
-- **Port** : `5432`
-- **Database** : `pennylane_data`
-- **Username** : `pennylane_user`
-- **Password** : voir `.env`
+1. **Clic droit** sur "Servers" → **Register** → **Server**
+2. **Onglet General** :
+   - Name : `Pennylane Local`
+3. **Onglet Connection** :
+   - Host : `postgres` (nom du conteneur Docker)
+   - Port : `5432` (port interne Docker)
+   - Database : `pennylane_db`
+   - Username : `pennylane_user`
+   - Password : (voir `.env`)
 
 ### Requêtes SQL utiles
 
 ```sql
 -- Lister les tables
-SELECT table_name FROM information_schema.tables
-WHERE table_schema = 'pennylane';
+SELECT table_name,
+       pg_size_pretty(pg_total_relation_size(quote_ident(table_name))) AS size
+FROM information_schema.tables
+WHERE table_schema = 'pennylane'
+ORDER BY pg_total_relation_size(quote_ident(table_name)) DESC;
 
--- Logs ETL
-SELECT * FROM pennylane.etl_logs
-ORDER BY execution_date DESC LIMIT 10;
+-- Voir un aperçu
+SELECT * FROM pennylane.analytical_ledger LIMIT 10;
 
--- Métadonnées synchro
-SELECT * FROM pennylane.sync_metadata;
+-- Compter lignes
+SELECT 'customers' AS table, COUNT(*) FROM pennylane.customers
+UNION ALL
+SELECT 'analytical_ledger', COUNT(*) FROM pennylane.analytical_ledger
+UNION ALL
+SELECT 'general_ledger', COUNT(*) FROM pennylane.general_ledger;
 ```
-
----
-
-## 📈 Connexion à Power BI
-
-### Étape 1 : Connexion PostgreSQL
-
-Power BI Desktop → **Obtenir les données** → **PostgreSQL**
-
-```
-Serveur : localhost
-Base de données : pennylane_data
-Mode : Importer
-```
-
-### Étape 2 : Sélectionner tables
-
-Schéma `pennylane` → Sélectionner tables
-
-### Étape 3 : Transformations dans Jupyter (recommandé)
-
-```python
-import pandas as pd
-from sqlalchemy import create_engine
-from dotenv import load_dotenv
-import os
-
-# Charger .env
-load_dotenv()
-
-# Connexion PostgreSQL
-conn_string = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
-engine = create_engine(conn_string)
-
-# Charger données brutes
-df = pd.read_sql('SELECT * FROM pennylane.invoices', engine)
-
-# VOS TRANSFORMATIONS
-df['montant_ht_euros'] = df['amount_cents'] / 100
-
-# Sauvegarder dans table transformée
-df.to_sql('invoices_transformed', engine, schema='pennylane', if_exists='replace', index=False)
-```
-
-Puis Power BI se connecte à `pennylane.invoices_transformed` !
-
----
-
-## 🔍 Endpoints Pennylane
-
-Configurés par défaut dans [config.json](config.json) :
-
-| Endpoint | Table | Incrémentiel |
-|----------|-------|--------------|
-| `/customer_invoices` | invoices | ✅ |
-| `/suppliers` | suppliers | ✅ |
-| `/customers` | customers | ✅ |
-| `/transactions` | transactions | ✅ |
-| `/journal_entries` | journal_entries | ✅ |
-| `/plan_items` | accounts | ❌ |
-| `/categories` | categories | ❌ |
-| `/payment_methods` | payment_methods | ❌ |
-
-**Ajouter/modifier** : Éditer `config.json` section `endpoints.enabled`
 
 ---
 
 ## 🐛 Dépannage
 
-### Erreur : "Variable d'environnement PENNYLANE_API_KEY requise"
+### ❌ Erreur : "Module 'papermill' not found"
 
-→ Créer fichier `.env` depuis `.env.example` et configurer
-
-### Erreur connexion PostgreSQL
-
+**Solution** :
 ```bash
-docker ps  # Vérifier que postgres tourne
-docker-compose restart postgres
+pip install -r requirements.txt
 ```
 
-### Erreur API 401 Unauthorized
+### ❌ Erreur : "Cannot connect to PostgreSQL"
 
-→ Vérifier `PENNYLANE_API_KEY` dans `.env`
+**Diagnostic** :
+```bash
+docker ps
+# Doit afficher 2 conteneurs "Up" (postgres + pgadmin)
+```
 
-### Voir les logs
+**Solution** :
+```bash
+docker-compose restart
+```
+
+### ❌ Erreur API Pennylane : "Unauthorized"
+
+**Solution** : Vérifier `.env` :
+- `PENNYLANE_API_TOKEN` (API REST)
+- `PENNYLANE_DATA_SHARING_KEY` (Redshift)
+
+### ❌ Notebook échoue : "Table does not exist"
+
+**Cause** : Mauvais credentials Redshift dans `.env`
+
+**Solution** : Tester connexion Redshift manuellement :
+```python
+import psycopg2
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+conn = psycopg2.connect(
+    host=os.getenv('REDSHIFT_HOST'),
+    port=os.getenv('REDSHIFT_PORT'),
+    database=os.getenv('REDSHIFT_DATABASE'),
+    user=os.getenv('REDSHIFT_USER'),
+    password=os.getenv('PENNYLANE_DATA_SHARING_KEY')
+)
+print("✅ Connexion Redshift OK")
+```
+
+### Voir les logs complets
 
 ```bash
-type logs\pennylane_etl.log  # Windows
-cat logs/pennylane_etl.log   # Linux/Mac
+# Windows
+type logs\notebook_scheduler.log
+
+# Linux/Mac
+cat logs/notebook_scheduler.log
 ```
 
 ---
 
-## 📊 Architecture complète
+## ⚖️ Notebook Scheduler vs Unified Scheduler
 
-```
-┌─────────────┐
-│  Pennylane  │  API (5 req/sec)
-└──────┬──────┘
-       │ Toutes les 10 min
-       ▼
-┌──────────────┐
-│ Python ETL   │  Rate limiting + Extraction
-└──────┬───────┘
-       │
-       ▼
-┌──────────────────────────────────────┐
-│          PostgreSQL (Docker)         │
-│  ┌────────────┐    ┌──────────────┐ │
-│  │  Tables    │ -> │   Tables     │ │
-│  │  brutes    │    │ transformées │ │
-│  └────────────┘    └──────────────┘ │
-└───────┬──────────────────┬───────────┘
-        │                  │
-        ▼                  ▼
-┌──────────────┐    ┌──────────────┐
-│   Jupyter    │    │   Power BI   │
-│Transformations│    │   Desktop    │
-└──────────────┘    └──────────────┘
-```
+Ce projet propose **2 schedulers** :
 
----
+| Critère | **Notebook Scheduler** ⭐ | **Unified Scheduler** |
+|---------|---------------------------|----------------------|
+| **Source de vérité** | Notebooks Jupyter | Code Python dupliqué |
+| **Maintenance** | 1 seul endroit | 2 endroits (notebook + .py) |
+| **Personnalisation** | ⭐⭐⭐⭐⭐ Très facile | ⭐⭐⭐ Moyen |
+| **Public cible** | Tous (y compris non-devs) | Développeurs Python |
+| **Performance** | ~10-12 min | ~8 min |
 
-## 🎯 Gains attendus
+**👉 Recommandé** : **Notebook Scheduler** (philosophie de ce projet open-source)
 
-| Aspect | Avant | Après |
-|--------|-------|-------|
-| **Actualisation Pennylane** | 2 heures | 10 minutes |
-| **Actualisation Power BI** | 30-60 min | 2-5 min |
-| **Transformations** | Power Query (lent) | Python/SQL (rapide) |
-| **Volume supporté** | Limité | Millions de lignes |
+**Voir comparaison complète** : [CHOIX_SCHEDULER.md](CHOIX_SCHEDULER.md)
 
 ---
 
 ## 🤝 Contribution
 
-Ce projet est open-source et conçu pour être réutilisable.
+Ce projet est **open-source** et conçu pour être **forkable** facilement.
 
-### Partager votre configuration
+### Partager votre fork
 
-1. **NE JAMAIS** commiter `.env`
+1. **NE JAMAIS** commiter `.env` (vos secrets)
 2. Mettre à jour `.env.example` si nouvelles variables
-3. Documenter dans README
+3. Documenter vos transformations dans les notebooks
 
 ### Déploiement chez un client
 
 ```bash
 # 1. Cloner
-git clone https://github.com/votre-username/pennylane-etl.git
+git clone https://github.com/votre-username/Penny.git
+cd Penny
 
-# 2. Créer .env depuis template
+# 2. Créer .env
 cp .env.example .env
+nano .env  # Configurer credentials du client
 
-# 3. Configurer secrets du client
-nano .env
-
-# 4. Démarrer
+# 3. Démarrer
 docker-compose up -d
-cd src && python main.py full
+pip install -r requirements.txt
+python src/notebook_scheduler.py
 ```
+
+### Ajouter un nouvel endpoint
+
+1. **Créer notebook** : `data/API Publique/Import_nouvelle_table.ipynb`
+2. **Le scheduler le détecte automatiquement** (aucune modification code !)
+3. **Tester** : Exécuter le notebook manuellement dans Jupyter
+4. **Déployer** : Le scheduler l'inclura à la prochaine synchro
 
 ---
 
 ## 📝 Licence
 
-MIT License - Libre d'utilisation et modification
+**MIT License** - Libre d'utilisation, modification et redistribution.
+
+Voir [LICENSE](LICENSE) pour détails.
 
 ---
 
-## 📞 Support
+## 📞 Support et communauté
 
 - **Documentation Pennylane API** : [pennylane.readme.io](https://pennylane.readme.io/)
-- **Issues GitHub** : [github.com/votre-username/pennylane-etl/issues](https://github.com/votre-username/pennylane-etl/issues)
+- **Issues GitHub** : [github.com/yves34690/Penny/issues](https://github.com/yves34690/Penny/issues)
+- **Documentation complète** : Voir guides dans le projet
 
 ---
 
-**Auteur** : Généré avec Claude Code
-**Version** : 2.0 (avec gestion .env)
-**Date** : 2025
+## 🌟 Remerciements
+
+Projet créé pour la **communauté Pennylane** francophone.
+
+Contributions bienvenues ! ⭐
+
+---
+
+**Auteur** : Yves Cloarec
+**Version** : 3.0 (Architecture "Notebooks First")
+**Date** : Octobre 2025
