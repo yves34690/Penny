@@ -144,7 +144,12 @@ class PennylaneClient:
         """Recupere toutes les pages d'un endpoint (pagination cursor-based API v2)"""
         all_data = []
         params = params or {}
-        params["per_page"] = 100
+        # API 2026 changes: utiliser 'limit' au lieu de 'per_page'
+        use_2026 = (extra_headers or {}).get("X-Use-2026-API-Changes") == "true"
+        if use_2026:
+            params["limit"] = 100
+        else:
+            params["per_page"] = 100
         cursor = None
         page = 1
 

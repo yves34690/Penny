@@ -12,6 +12,7 @@ Architecture:
     - Tables d'export : workflow POST + polling + download
 """
 
+import json
 import os
 import sys
 import argparse
@@ -86,14 +87,10 @@ FULL_REPLACE_TABLES = {
 }
 
 # Tables d'export (workflow POST specifique)
-EXPORT_TABLES = {
-    "analytical_ledger": {
-        "export_method": "export_analytical_ledger",
-    },
-    "fec": {
-        "export_method": "export_fec",
-    },
-}
+# Note: les endpoints /exports/fec et /exports/analytical_general_ledger
+# ne sont pas encore disponibles dans l'API v2 publique (404).
+# A reactiver quand Pennylane les rendra disponibles.
+EXPORT_TABLES = {}
 
 # Logging
 logging.basicConfig(
@@ -214,8 +211,19 @@ def full_replace_table(conn, table_name: str, df: pd.DataFrame):
         col_names = ", ".join(f'"{c}"' for c in columns)
         template = f"({', '.join(['%s'] * len(columns))})"
 
-        # Convertir NaN en None pour PostgreSQL
-        records = df.where(df.notna(), None).values.tolist()
+        # Convertir NaN en None et dicts/lists en JSON strings pour PostgreSQL
+        records = []
+        for row in df.where(df.notna(), None).values.tolist():
+            records.append(
+                [
+                    (
+                        json.dumps(v, ensure_ascii=False, default=str)
+                        if isinstance(v, (dict, list))
+                        else v
+                    )
+                    for v in row
+                ]
+            )
 
         execute_values(
             cur,
@@ -265,7 +273,18 @@ def upsert_records(conn, table_name: str, records: list[dict]):
         template = f"({', '.join(['%s'] * len(columns))})"
         update_cols = ", ".join(f'"{c}" = EXCLUDED."{c}"' for c in columns if c != "id")
 
-        records_list = df.where(df.notna(), None).values.tolist()
+        records_list = []
+        for row in df.where(df.notna(), None).values.tolist():
+            records_list.append(
+                [
+                    (
+                        json.dumps(v, ensure_ascii=False, default=str)
+                        if isinstance(v, (dict, list))
+                        else v
+                    )
+                    for v in row
+                ]
+            )
 
         sql = f"""
             INSERT INTO {schema}.{table_name} ({col_names}) VALUES %s
