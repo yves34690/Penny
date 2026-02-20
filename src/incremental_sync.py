@@ -169,6 +169,95 @@ def update_sync_state(conn, table_name: str, records_synced: int, sync_type: str
 
 
 # ============================================================================
+# APLATISSEMENT DES OBJETS IMBRIQUES
+# ============================================================================
+
+# Colonnes qui ne sont que des references URL vers des sous-ressources API
+# (ne contiennent aucune donnee utile, juste {"url": "https://..."})
+URL_ONLY_COLUMNS = {
+    "invoice_line_sections",
+    "invoice_lines",
+    "custom_header_fields",
+    "categories",
+    "payments",
+    "matched_transactions",
+    "appendices",
+    "mandates",
+    "contacts",
+}
+
+
+def flatten_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """Aplatit les colonnes contenant des objets JSON imbriques.
+
+    Regles :
+    - Colonne dict avec seulement "url" → supprimee (reference API inutile)
+    - Colonne dict avec "id" (+url optionnel) → extraite en {col}_id (BIGINT)
+    - Colonne dict avec d'autres champs → extraite en {col}_{field} pour chaque champ
+    """
+    if df.empty:
+        return df
+
+    cols_to_drop = []
+    new_cols = {}
+
+    for col in df.columns:
+        # Supprimer les colonnes URL-only connues
+        if col in URL_ONLY_COLUMNS:
+            cols_to_drop.append(col)
+            continue
+
+        # Detecter les colonnes contenant des dicts
+        sample_values = df[col].dropna().head(5)
+        if sample_values.empty:
+            continue
+
+        has_dicts = any(isinstance(v, dict) for v in sample_values)
+        if not has_dicts:
+            continue
+
+        # Analyser la structure du dict
+        sample_dict = next(
+            (v for v in sample_values if isinstance(v, dict)), None
+        )
+        if sample_dict is None:
+            continue
+
+        keys = set(sample_dict.keys())
+
+        # Dict avec seulement "url" → supprimer
+        if keys == {"url"}:
+            cols_to_drop.append(col)
+            continue
+
+        # Dict avec "id" (+ "url" optionnel) → extraire juste l'id
+        if "id" in keys and keys <= {"id", "url"}:
+            new_cols[f"{col}_id"] = df[col].apply(
+                lambda v: v["id"] if isinstance(v, dict) and "id" in v else None
+            )
+            cols_to_drop.append(col)
+            continue
+
+        # Dict avec d'autres champs utiles → extraire chaque champ
+        for key in sorted(keys):
+            if key == "url":
+                continue
+            new_cols[f"{col}_{key}"] = df[col].apply(
+                lambda v, k=key: v.get(k) if isinstance(v, dict) else None
+            )
+        cols_to_drop.append(col)
+
+    # Appliquer les modifications
+    if cols_to_drop:
+        df = df.drop(columns=cols_to_drop)
+    if new_cols:
+        for col_name, series in new_cols.items():
+            df[col_name] = series
+
+    return df
+
+
+# ============================================================================
 # OPERATIONS POSTGRESQL
 # ============================================================================
 
@@ -178,6 +267,9 @@ def full_replace_table(conn, table_name: str, df: pd.DataFrame):
     if df.empty:
         logger.warning(f"[SKIP] {table_name}: DataFrame vide, table non modifiee")
         return 0
+
+    # Aplatir les objets imbriques avant insertion
+    df = flatten_dataframe(df)
 
     schema = "pennylane"
     columns = list(df.columns)
@@ -245,6 +337,10 @@ def upsert_records(conn, table_name: str, records: list[dict]):
 
     schema = "pennylane"
     df = pd.DataFrame(records)
+
+    # Aplatir les objets imbriques avant insertion
+    df = flatten_dataframe(df)
+
     columns = list(df.columns)
 
     if "id" not in columns:
