@@ -88,7 +88,7 @@ class NotebookScheduler:
         """Demarre le scheduler"""
         logger.info("=" * 80)
         logger.info("[DEMARRAGE] Scheduler Pennylane v2")
-        logger.info("[DEMARRAGE] Sync incrementale toutes les 2h")
+        logger.info("[DEMARRAGE] Sync incrementale toutes les 5 min")
         logger.info("[DEMARRAGE] Full reload quotidien a 03:00")
         logger.info("=" * 80)
 
@@ -97,7 +97,7 @@ class NotebookScheduler:
         self.run_full_sync()
 
         # Planifier executions futures
-        schedule.every(2).hours.do(self.run_incremental_sync)
+        schedule.every(5).minutes.do(self.run_incremental_sync)
         schedule.every().day.at("03:00").do(self.run_full_sync)
 
         logger.info("[CRON] Planification activee:")
