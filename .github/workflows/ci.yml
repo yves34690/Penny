@@ -57,9 +57,11 @@ jobs:
         fi
         echo "OK: .env.example exists"
 
-    - name: Check Docker Compose config
+    - name: Check Docker Compose syntax
       run: |
+        cp .env.example .env
         docker compose config > /dev/null
+        rm .env
         echo "OK: docker-compose.yml is valid"
 
   security-check:
