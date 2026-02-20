@@ -127,8 +127,7 @@ def ensure_schema_and_sync_state(conn):
     """Cree le schema pennylane et la table sync_state si necessaire"""
     with conn.cursor() as cur:
         cur.execute("CREATE SCHEMA IF NOT EXISTS pennylane")
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS pennylane.sync_state (
                 table_name VARCHAR(100) PRIMARY KEY,
                 last_sync_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -137,8 +136,7 @@ def ensure_schema_and_sync_state(conn):
                 sync_type VARCHAR(20) DEFAULT 'full',
                 updated_at TIMESTAMP DEFAULT NOW()
             )
-        """
-        )
+        """)
     conn.commit()
 
 
@@ -247,14 +245,12 @@ def upsert_records(conn, table_name: str, records: list[dict]):
 
     with conn.cursor() as cur:
         # S'assurer que la table existe (si premiere sync incrementale)
-        cur.execute(
-            f"""
+        cur.execute(f"""
             SELECT EXISTS (
                 SELECT FROM information_schema.tables
                 WHERE table_schema = '{schema}' AND table_name = '{table_name}'
             )
-        """
-        )
+        """)
         table_exists = cur.fetchone()[0]
 
         if not table_exists:
