@@ -61,7 +61,7 @@ services:
     depends_on:
       - postgres
 
-  # Scheduler automatique pour synchronisation toutes les 2 heures
+  # Scheduler : sync incrementale 2h + full reload quotidien 03:00
   scheduler:
     build:
       context: .
@@ -71,20 +71,14 @@ services:
     env_file:
       - .env
     environment:
-      # Variables pour PostgreSQL local
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      # Variables Pennylane
-      PENNYLANE_DATA_SHARING_KEY: ${PENNYLANE_DATA_SHARING_KEY}
       PENNYLANE_API_TOKEN: ${PENNYLANE_API_TOKEN}
-      # Configuration Redshift
-      REDSHIFT_HOST: ${REDSHIFT_HOST}
-      REDSHIFT_PORT: ${REDSHIFT_PORT}
-      REDSHIFT_DATABASE: ${REDSHIFT_DATABASE}
-      REDSHIFT_USER: ${REDSHIFT_USER}
+      PENNYLANE_API_BASE_URL: ${PENNYLANE_API_BASE_URL}
+      PENNYLANE_RATE_LIMIT: ${PENNYLANE_RATE_LIMIT}
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
@@ -93,7 +87,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('logs/scheduler.log') else 1)"]
+      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('logs/notebook_scheduler.log') else 1)"]
       interval: 30s
       timeout: 10s
       retries: 3
