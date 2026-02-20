@@ -35,74 +35,74 @@ from src.pennylane_api_client import PennylaneClient
 
 # Tables supportees par les changelogs (sync incrementale)
 CHANGELOG_TABLES = {
-    'customers': {
-        'endpoint': '/customers',
-        'changelog_resource': 'customers',
+    "customers": {
+        "endpoint": "/customers",
+        "changelog_resource": "customers",
     },
-    'suppliers': {
-        'endpoint': '/suppliers',
-        'changelog_resource': 'suppliers',
+    "suppliers": {
+        "endpoint": "/suppliers",
+        "changelog_resource": "suppliers",
     },
-    'customer_invoices': {
-        'endpoint': '/customer_invoices',
-        'changelog_resource': 'customer_invoices',
+    "customer_invoices": {
+        "endpoint": "/customer_invoices",
+        "changelog_resource": "customer_invoices",
     },
-    'supplier_invoices': {
-        'endpoint': '/supplier_invoices',
-        'changelog_resource': 'supplier_invoices',
+    "supplier_invoices": {
+        "endpoint": "/supplier_invoices",
+        "changelog_resource": "supplier_invoices",
     },
-    'products': {
-        'endpoint': '/products',
-        'changelog_resource': 'products',
+    "products": {
+        "endpoint": "/products",
+        "changelog_resource": "products",
     },
-    'transactions': {
-        'endpoint': '/transactions',
-        'changelog_resource': 'transactions',
+    "transactions": {
+        "endpoint": "/transactions",
+        "changelog_resource": "transactions",
     },
-    'ledger_entry_lines': {
-        'endpoint': '/ledger_entry_lines',
-        'changelog_resource': 'ledger_entry_lines',
-        'extra_headers': {'X-Use-2026-API-Changes': 'true'},
+    "ledger_entry_lines": {
+        "endpoint": "/ledger_entry_lines",
+        "changelog_resource": "ledger_entry_lines",
+        "extra_headers": {"X-Use-2026-API-Changes": "true"},
     },
 }
 
 # Tables sans changelog (full replace via API)
 FULL_REPLACE_TABLES = {
-    'ledger_entries': {
-        'endpoint': '/ledger_entries',
-        'extra_headers': {'X-Use-2026-API-Changes': 'true'},
+    "ledger_entries": {
+        "endpoint": "/ledger_entries",
+        "extra_headers": {"X-Use-2026-API-Changes": "true"},
     },
-    'ledger_accounts': {
-        'endpoint': '/ledger_accounts',
-        'extra_headers': {'X-Use-2026-API-Changes': 'true'},
+    "ledger_accounts": {
+        "endpoint": "/ledger_accounts",
+        "extra_headers": {"X-Use-2026-API-Changes": "true"},
     },
-    'bank_accounts': {
-        'endpoint': '/bank_accounts',
+    "bank_accounts": {
+        "endpoint": "/bank_accounts",
     },
-    'fiscal_years': {
-        'endpoint': '/fiscal_years',
-        'extra_headers': {'X-Use-2026-API-Changes': 'true'},
+    "fiscal_years": {
+        "endpoint": "/fiscal_years",
+        "extra_headers": {"X-Use-2026-API-Changes": "true"},
     },
 }
 
 # Tables d'export (workflow POST specifique)
 EXPORT_TABLES = {
-    'analytical_ledger': {
-        'export_method': 'export_analytical_ledger',
+    "analytical_ledger": {
+        "export_method": "export_analytical_ledger",
     },
-    'fec': {
-        'export_method': 'export_fec',
+    "fec": {
+        "export_method": "export_fec",
     },
 }
 
 # Logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler('logs/incremental_sync.log'),
-        logging.StreamHandler()
-    ]
+        logging.FileHandler("logs/incremental_sync.log"),
+        logging.StreamHandler(),
+    ],
 )
 logger = logging.getLogger(__name__)
 
@@ -111,14 +111,15 @@ logger = logging.getLogger(__name__)
 # CONNEXION POSTGRESQL
 # ============================================================================
 
+
 def get_pg_connection():
     """Cree une connexion PostgreSQL depuis les variables d'environnement"""
     return psycopg2.connect(
-        host=os.getenv('POSTGRES_HOST', 'localhost'),
-        port=int(os.getenv('POSTGRES_PORT', '5433')),
-        database=os.getenv('POSTGRES_DB', 'pennylane_db'),
-        user=os.getenv('POSTGRES_USER', 'pennylane_user'),
-        password=os.getenv('POSTGRES_PASSWORD'),
+        host=os.getenv("POSTGRES_HOST", "localhost"),
+        port=int(os.getenv("POSTGRES_PORT", "5433")),
+        database=os.getenv("POSTGRES_DB", "pennylane_db"),
+        user=os.getenv("POSTGRES_USER", "pennylane_user"),
+        password=os.getenv("POSTGRES_PASSWORD"),
     )
 
 
@@ -126,7 +127,8 @@ def ensure_schema_and_sync_state(conn):
     """Cree le schema pennylane et la table sync_state si necessaire"""
     with conn.cursor() as cur:
         cur.execute("CREATE SCHEMA IF NOT EXISTS pennylane")
-        cur.execute("""
+        cur.execute(
+            """
             CREATE TABLE IF NOT EXISTS pennylane.sync_state (
                 table_name VARCHAR(100) PRIMARY KEY,
                 last_sync_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -135,7 +137,8 @@ def ensure_schema_and_sync_state(conn):
                 sync_type VARCHAR(20) DEFAULT 'full',
                 updated_at TIMESTAMP DEFAULT NOW()
             )
-        """)
+        """
+        )
     conn.commit()
 
 
@@ -144,18 +147,19 @@ def get_last_sync(conn, table_name: str) -> str | None:
     with conn.cursor() as cur:
         cur.execute(
             "SELECT last_sync_at FROM pennylane.sync_state WHERE table_name = %s",
-            (table_name,)
+            (table_name,),
         )
         row = cur.fetchone()
         if row and row[0]:
-            return row[0].strftime('%Y-%m-%dT%H:%M:%SZ')
+            return row[0].strftime("%Y-%m-%dT%H:%M:%SZ")
     return None
 
 
 def update_sync_state(conn, table_name: str, records_synced: int, sync_type: str):
     """Met a jour l'etat de sync pour une table"""
     with conn.cursor() as cur:
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO pennylane.sync_state (table_name, last_sync_at, records_synced, sync_type, updated_at)
             VALUES (%s, NOW(), %s, %s, NOW())
             ON CONFLICT (table_name) DO UPDATE SET
@@ -163,7 +167,9 @@ def update_sync_state(conn, table_name: str, records_synced: int, sync_type: str
                 records_synced = EXCLUDED.records_synced,
                 sync_type = EXCLUDED.sync_type,
                 updated_at = NOW()
-        """, (table_name, records_synced, sync_type))
+        """,
+            (table_name, records_synced, sync_type),
+        )
     conn.commit()
 
 
@@ -171,13 +177,14 @@ def update_sync_state(conn, table_name: str, records_synced: int, sync_type: str
 # OPERATIONS POSTGRESQL
 # ============================================================================
 
+
 def full_replace_table(conn, table_name: str, df: pd.DataFrame):
     """Remplace completement une table PostgreSQL avec un DataFrame"""
     if df.empty:
         logger.warning(f"[SKIP] {table_name}: DataFrame vide, table non modifiee")
         return 0
 
-    schema = 'pennylane'
+    schema = "pennylane"
     columns = list(df.columns)
 
     with conn.cursor() as cur:
@@ -188,25 +195,25 @@ def full_replace_table(conn, table_name: str, df: pd.DataFrame):
         col_defs = []
         for col in columns:
             dtype = df[col].dtype
-            if dtype == 'int64':
-                pg_type = 'BIGINT'
-            elif dtype == 'float64':
-                pg_type = 'DOUBLE PRECISION'
-            elif dtype == 'bool':
-                pg_type = 'BOOLEAN'
+            if dtype == "int64":
+                pg_type = "BIGINT"
+            elif dtype == "float64":
+                pg_type = "DOUBLE PRECISION"
+            elif dtype == "bool":
+                pg_type = "BOOLEAN"
             else:
-                pg_type = 'TEXT'
+                pg_type = "TEXT"
             col_defs.append(f'"{col}" {pg_type}')
 
         create_sql = f"CREATE TABLE {schema}.{table_name} ({', '.join(col_defs)})"
         cur.execute(create_sql)
 
         # Ajouter PK sur id si la colonne existe
-        if 'id' in columns:
+        if "id" in columns:
             cur.execute(f"ALTER TABLE {schema}.{table_name} ADD PRIMARY KEY (id)")
 
         # Insert en batch
-        col_names = ', '.join(f'"{c}"' for c in columns)
+        col_names = ", ".join(f'"{c}"' for c in columns)
         template = f"({', '.join(['%s'] * len(columns))})"
 
         # Convertir NaN en None pour PostgreSQL
@@ -217,7 +224,7 @@ def full_replace_table(conn, table_name: str, df: pd.DataFrame):
             f"INSERT INTO {schema}.{table_name} ({col_names}) VALUES %s",
             records,
             template=template,
-            page_size=500
+            page_size=500,
         )
 
     conn.commit()
@@ -230,36 +237,37 @@ def upsert_records(conn, table_name: str, records: list[dict]):
     if not records:
         return 0
 
-    schema = 'pennylane'
+    schema = "pennylane"
     df = pd.DataFrame(records)
     columns = list(df.columns)
 
-    if 'id' not in columns:
+    if "id" not in columns:
         logger.warning(f"[SKIP] {table_name}: pas de colonne 'id', upsert impossible")
         return 0
 
     with conn.cursor() as cur:
         # S'assurer que la table existe (si premiere sync incrementale)
-        cur.execute(f"""
+        cur.execute(
+            f"""
             SELECT EXISTS (
                 SELECT FROM information_schema.tables
                 WHERE table_schema = '{schema}' AND table_name = '{table_name}'
             )
-        """)
+        """
+        )
         table_exists = cur.fetchone()[0]
 
         if not table_exists:
-            logger.info(f"[CREATE] Table {schema}.{table_name} n'existe pas, full replace")
+            logger.info(
+                f"[CREATE] Table {schema}.{table_name} n'existe pas, full replace"
+            )
             conn.commit()
             return full_replace_table(conn, table_name, df)
 
         # Upsert
-        col_names = ', '.join(f'"{c}"' for c in columns)
+        col_names = ", ".join(f'"{c}"' for c in columns)
         template = f"({', '.join(['%s'] * len(columns))})"
-        update_cols = ', '.join(
-            f'"{c}" = EXCLUDED."{c}"'
-            for c in columns if c != 'id'
-        )
+        update_cols = ", ".join(f'"{c}" = EXCLUDED."{c}"' for c in columns if c != "id")
 
         records_list = df.where(df.notna(), None).values.tolist()
 
@@ -280,13 +288,10 @@ def delete_records(conn, table_name: str, ids: list[int]):
     if not ids:
         return 0
 
-    schema = 'pennylane'
+    schema = "pennylane"
 
     with conn.cursor() as cur:
-        cur.execute(
-            f"DELETE FROM {schema}.{table_name} WHERE id = ANY(%s)",
-            (ids,)
-        )
+        cur.execute(f"DELETE FROM {schema}.{table_name} WHERE id = ANY(%s)", (ids,))
         deleted = cur.rowcount
 
     conn.commit()
@@ -298,8 +303,14 @@ def delete_records(conn, table_name: str, ids: list[int]):
 # LOGIQUE DE SYNC
 # ============================================================================
 
-def sync_changelog_table(client: PennylaneClient, conn, table_name: str,
-                         config: dict, force_full: bool = False):
+
+def sync_changelog_table(
+    client: PennylaneClient,
+    conn,
+    table_name: str,
+    config: dict,
+    force_full: bool = False,
+):
     """Sync incrementale d'une table via changelog"""
     logger.info(f"{'='*60}")
     logger.info(f"[SYNC] {table_name} (changelog)")
@@ -309,54 +320,60 @@ def sync_changelog_table(client: PennylaneClient, conn, table_name: str,
     # Full import si jamais sync ou force
     if not last_sync:
         logger.info(f"[FULL] {table_name}: premier import ou force full")
-        extra_headers = config.get('extra_headers')
-        data = client.fetch_all_raw(config['endpoint'], extra_headers=extra_headers)
+        extra_headers = config.get("extra_headers")
+        data = client.fetch_all_raw(config["endpoint"], extra_headers=extra_headers)
         df = pd.DataFrame(data) if data else pd.DataFrame()
         count = full_replace_table(conn, table_name, df)
-        update_sync_state(conn, table_name, count, 'full')
+        update_sync_state(conn, table_name, count, "full")
         return
 
     # Sync incrementale via changelog
-    changes = client.get_changelog(config['changelog_resource'], last_sync)
+    changes = client.get_changelog(config["changelog_resource"], last_sync)
 
     if not changes:
         logger.info(f"[SKIP] {table_name}: aucun changement depuis {last_sync}")
-        update_sync_state(conn, table_name, 0, 'incremental')
+        update_sync_state(conn, table_name, 0, "incremental")
         return
 
     # Trier les changements par operation
-    inserts = [c['id'] for c in changes if c.get('operation') in ('insert', 'create')]
-    updates = [c['id'] for c in changes if c.get('operation') == 'update']
-    deletes = [c['id'] for c in changes if c.get('operation') == 'delete']
+    inserts = [c["id"] for c in changes if c.get("operation") in ("insert", "create")]
+    updates = [c["id"] for c in changes if c.get("operation") == "update"]
+    deletes = [c["id"] for c in changes if c.get("operation") == "delete"]
 
-    logger.info(f"[CHANGELOG] {table_name}: {len(inserts)} insert, {len(updates)} update, {len(deletes)} delete")
+    logger.info(
+        f"[CHANGELOG] {table_name}: {len(inserts)} insert, {len(updates)} update, {len(deletes)} delete"
+    )
 
     total = 0
 
     # Fetch et upsert pour insert + update
     upsert_ids = list(set(inserts + updates))
     if upsert_ids:
-        extra_headers = config.get('extra_headers')
-        records = client.get_by_ids(config['endpoint'], upsert_ids, extra_headers=extra_headers)
+        extra_headers = config.get("extra_headers")
+        records = client.get_by_ids(
+            config["endpoint"], upsert_ids, extra_headers=extra_headers
+        )
         total += upsert_records(conn, table_name, records)
 
     # Delete
     if deletes:
         total += delete_records(conn, table_name, deletes)
 
-    update_sync_state(conn, table_name, total, 'incremental')
+    update_sync_state(conn, table_name, total, "incremental")
 
 
-def sync_full_replace_table(client: PennylaneClient, conn, table_name: str, config: dict):
+def sync_full_replace_table(
+    client: PennylaneClient, conn, table_name: str, config: dict
+):
     """Full replace d'une table via API v2 (pas de changelog disponible)"""
     logger.info(f"{'='*60}")
     logger.info(f"[SYNC] {table_name} (full replace API)")
 
-    extra_headers = config.get('extra_headers')
-    data = client.fetch_all_raw(config['endpoint'], extra_headers=extra_headers)
+    extra_headers = config.get("extra_headers")
+    data = client.fetch_all_raw(config["endpoint"], extra_headers=extra_headers)
     df = pd.DataFrame(data) if data else pd.DataFrame()
     count = full_replace_table(conn, table_name, df)
-    update_sync_state(conn, table_name, count, 'full')
+    update_sync_state(conn, table_name, count, "full")
 
 
 def sync_export_table(client: PennylaneClient, conn, table_name: str, config: dict):
@@ -365,18 +382,20 @@ def sync_export_table(client: PennylaneClient, conn, table_name: str, config: di
     logger.info(f"[SYNC] {table_name} (export)")
 
     try:
-        export_method = getattr(client, config['export_method'])
+        export_method = getattr(client, config["export_method"])
         result = export_method()
 
-        download_url = result.get('download_url') or result.get('url')
+        download_url = result.get("download_url") or result.get("url")
         if not download_url:
-            logger.warning(f"[SKIP] {table_name}: pas d'URL de telechargement dans la reponse")
+            logger.warning(
+                f"[SKIP] {table_name}: pas d'URL de telechargement dans la reponse"
+            )
             logger.warning(f"  Reponse: {result}")
             return
 
         df = client.download_export(download_url)
         count = full_replace_table(conn, table_name, df)
-        update_sync_state(conn, table_name, count, 'export')
+        update_sync_state(conn, table_name, count, "export")
 
     except Exception as e:
         logger.error(f"[ERREUR] {table_name}: {e}")
@@ -386,12 +405,15 @@ def sync_export_table(client: PennylaneClient, conn, table_name: str, config: di
 # MAIN
 # ============================================================================
 
+
 def run_sync(force_full: bool = False, table_filter: str = None):
     """Execute la synchronisation"""
     start_time = time.time()
 
     logger.info("=" * 80)
-    logger.info(f"[START] Sync {'FULL' if force_full else 'INCREMENTALE'} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info(
+        f"[START] Sync {'FULL' if force_full else 'INCREMENTALE'} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    )
     if table_filter:
         logger.info(f"[FILTER] Table unique: {table_filter}")
     logger.info("=" * 80)
@@ -400,7 +422,7 @@ def run_sync(force_full: bool = False, table_filter: str = None):
     load_dotenv()
 
     # Init client API
-    client = PennylaneClient(env_path='.env')
+    client = PennylaneClient(env_path=".env")
 
     # Connexion PostgreSQL
     conn = get_pg_connection()
@@ -459,14 +481,22 @@ def run_sync(force_full: bool = False, table_filter: str = None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Sync incrementale Pennylane -> PostgreSQL')
-    parser.add_argument('--full', action='store_true', help='Force full import de toutes les tables')
-    parser.add_argument('--table', type=str, help='Sync une seule table (ex: customers)')
+    parser = argparse.ArgumentParser(
+        description="Sync incrementale Pennylane -> PostgreSQL"
+    )
+    parser.add_argument(
+        "--full", action="store_true", help="Force full import de toutes les tables"
+    )
+    parser.add_argument(
+        "--table", type=str, help="Sync une seule table (ex: customers)"
+    )
     args = parser.parse_args()
 
     # Verifier que la table demandee existe
     if args.table:
-        all_tables = set(CHANGELOG_TABLES) | set(FULL_REPLACE_TABLES) | set(EXPORT_TABLES)
+        all_tables = (
+            set(CHANGELOG_TABLES) | set(FULL_REPLACE_TABLES) | set(EXPORT_TABLES)
+        )
         if args.table not in all_tables:
             print(f"[ERREUR] Table '{args.table}' inconnue. Tables disponibles:")
             for t in sorted(all_tables):

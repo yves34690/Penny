@@ -21,11 +21,11 @@ import schedule
 # Configuration logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler('logs/notebook_scheduler.log'),
-        logging.StreamHandler()
-    ]
+        logging.FileHandler("logs/notebook_scheduler.log"),
+        logging.StreamHandler(),
+    ],
 )
 logger = logging.getLogger(__name__)
 
@@ -51,11 +51,14 @@ class NotebookScheduler:
     def run_incremental_sync(self):
         """Execute la sync incrementale via API v2 (rapide)"""
         logger.info("=" * 80)
-        logger.info(f"[CRON] SYNC INCREMENTALE - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(
+            f"[CRON] SYNC INCREMENTALE - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
         logger.info("=" * 80)
 
         try:
             from src.incremental_sync import run_sync
+
             success = run_sync(force_full=False)
             if success:
                 logger.info("[CRON] Sync incrementale terminee avec succes")
@@ -67,11 +70,14 @@ class NotebookScheduler:
     def run_full_sync(self):
         """Execute un full reload complet via API v2"""
         logger.info("=" * 80)
-        logger.info(f"[CRON] FULL RELOAD - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(
+            f"[CRON] FULL RELOAD - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
         logger.info("=" * 80)
 
         try:
             from src.incremental_sync import run_sync
+
             success = run_sync(force_full=True)
             if success:
                 logger.info("[CRON] Full reload termine avec succes")

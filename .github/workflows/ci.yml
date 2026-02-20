@@ -29,9 +29,7 @@ jobs:
 
     - name: Lint with flake8
       run: |
-        # Stop build if there are Python syntax errors or undefined names
         flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
-        # Exit-zero treats all errors as warnings
         flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Check code formatting with black
@@ -40,11 +38,8 @@ jobs:
 
     - name: Test Python imports
       run: |
-        cd src
-        python -c "from config_loader import load_full_config, get_env"
-        python -c "from pennylane_api import PennylaneAPI"
-        python -c "from database import PostgresDatabase"
-        python -c "from transformations import DataTransformer"
+        python -c "from src.pennylane_api_client import PennylaneClient"
+        python -c "from src.incremental_sync import CHANGELOG_TABLES, FULL_REPLACE_TABLES, EXPORT_TABLES"
 
     - name: Check .env not committed
       run: |
@@ -52,7 +47,7 @@ jobs:
           echo "ERROR: .env should not be committed to repository"
           exit 1
         fi
-        echo "✓ .env not present (good)"
+        echo "OK: .env not present"
 
     - name: Validate .env.example
       run: |
@@ -60,17 +55,12 @@ jobs:
           echo "ERROR: .env.example missing"
           exit 1
         fi
-        echo "✓ .env.example exists"
-
-    - name: Validate config.json
-      run: |
-        python -c "import json; json.load(open('config.json'))"
-        echo "✓ config.json is valid JSON"
+        echo "OK: .env.example exists"
 
     - name: Check Docker Compose config
       run: |
         docker compose config > /dev/null
-        echo "✓ docker-compose.yml is valid"
+        echo "OK: docker-compose.yml is valid"
 
   security-check:
     name: Security Check
@@ -91,29 +81,3 @@ jobs:
     - name: Check for security vulnerabilities
       run: |
         safety check --file requirements.txt || true
-
-  docs:
-    name: Build Documentation
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-
-    - name: Install MkDocs and dependencies
-      run: |
-        pip install mkdocs-material pymdown-extensions
-
-    - name: Build documentation
-      run: |
-        mkdocs build --strict
-
-    - name: Deploy to GitHub Pages
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      run: |
-        mkdocs gh-deploy --force

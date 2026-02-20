@@ -30,11 +30,13 @@ class PennylaneClient:
         if env_path:
             load_dotenv(dotenv_path=env_path)
         else:
-            load_dotenv(dotenv_path='../../.env')
+            load_dotenv(dotenv_path="../../.env")
 
-        self.api_token = os.getenv('PENNYLANE_API_TOKEN')
-        self.api_base_url = os.getenv('PENNYLANE_API_BASE_URL', 'https://app.pennylane.com/api/external/v2')
-        self.rate_limit = float(os.getenv('PENNYLANE_RATE_LIMIT', '4.5'))
+        self.api_token = os.getenv("PENNYLANE_API_TOKEN")
+        self.api_base_url = os.getenv(
+            "PENNYLANE_API_BASE_URL", "https://app.pennylane.com/api/external/v2"
+        )
+        self.rate_limit = float(os.getenv("PENNYLANE_RATE_LIMIT", "4.5"))
 
         if not self.api_token:
             raise ValueError("PENNYLANE_API_TOKEN non trouve dans .env")
@@ -43,9 +45,9 @@ class PennylaneClient:
         self.last_request_time = 0
 
         self.headers = {
-            'Authorization': f'Bearer {self.api_token}',
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            "Authorization": f"Bearer {self.api_token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
         }
 
         print(f"[OK] Client API initialise")
@@ -67,8 +69,12 @@ class PennylaneClient:
 
         self.last_request_time = time.time()
 
-    def _make_request(self, endpoint: str, params: Optional[Dict] = None,
-                      extra_headers: Optional[Dict] = None) -> Dict:
+    def _make_request(
+        self,
+        endpoint: str,
+        params: Optional[Dict] = None,
+        extra_headers: Optional[Dict] = None,
+    ) -> Dict:
         """Requete GET avec rate limiting et retry 429"""
         url = f"{self.api_base_url}{endpoint}"
         headers = {**self.headers, **(extra_headers or {})}
@@ -81,20 +87,26 @@ class PennylaneClient:
             if response.status_code == 200:
                 return response.json()
             elif response.status_code == 429:
-                retry_after = int(response.headers.get('Retry-After', 60))
+                retry_after = int(response.headers.get("Retry-After", 60))
                 print(f"[WARNING] Rate limit atteint, attente {retry_after}s...")
                 time.sleep(retry_after)
                 return self._make_request(endpoint, params, extra_headers)
             elif response.status_code == 401:
-                raise Exception("Token API invalide - Verifiez PENNYLANE_API_TOKEN dans .env")
+                raise Exception(
+                    "Token API invalide - Verifiez PENNYLANE_API_TOKEN dans .env"
+                )
             else:
                 raise Exception(f"Erreur API {response.status_code}: {response.text}")
 
         except requests.exceptions.Timeout:
             raise Exception("Timeout API - Verifiez votre connexion internet")
 
-    def _make_post_request(self, endpoint: str, json_body: Optional[Dict] = None,
-                           extra_headers: Optional[Dict] = None) -> Dict:
+    def _make_post_request(
+        self,
+        endpoint: str,
+        json_body: Optional[Dict] = None,
+        extra_headers: Optional[Dict] = None,
+    ) -> Dict:
         """Requete POST avec rate limiting et retry 429"""
         url = f"{self.api_base_url}{endpoint}"
         headers = {**self.headers, **(extra_headers or {})}
@@ -107,24 +119,32 @@ class PennylaneClient:
             if response.status_code in (200, 201, 202):
                 return response.json()
             elif response.status_code == 429:
-                retry_after = int(response.headers.get('Retry-After', 60))
+                retry_after = int(response.headers.get("Retry-After", 60))
                 print(f"[WARNING] Rate limit atteint, attente {retry_after}s...")
                 time.sleep(retry_after)
                 return self._make_post_request(endpoint, json_body, extra_headers)
             elif response.status_code == 401:
-                raise Exception("Token API invalide - Verifiez PENNYLANE_API_TOKEN dans .env")
+                raise Exception(
+                    "Token API invalide - Verifiez PENNYLANE_API_TOKEN dans .env"
+                )
             else:
-                raise Exception(f"Erreur API POST {response.status_code}: {response.text}")
+                raise Exception(
+                    f"Erreur API POST {response.status_code}: {response.text}"
+                )
 
         except requests.exceptions.Timeout:
             raise Exception("Timeout API POST - Verifiez votre connexion internet")
 
-    def _fetch_all_pages(self, endpoint: str, params: Optional[Dict] = None,
-                         extra_headers: Optional[Dict] = None) -> List[Dict]:
+    def _fetch_all_pages(
+        self,
+        endpoint: str,
+        params: Optional[Dict] = None,
+        extra_headers: Optional[Dict] = None,
+    ) -> List[Dict]:
         """Recupere toutes les pages d'un endpoint (pagination cursor-based API v2)"""
         all_data = []
         params = params or {}
-        params['per_page'] = 100
+        params["per_page"] = 100
         cursor = None
         page = 1
 
@@ -132,14 +152,14 @@ class PennylaneClient:
 
         while True:
             if cursor:
-                params['cursor'] = cursor
+                params["cursor"] = cursor
 
             response = self._make_request(endpoint, params, extra_headers)
 
-            if isinstance(response, dict) and 'items' in response:
-                data = response['items']
-                has_more = response.get('has_more', False)
-                cursor = response.get('next_cursor')
+            if isinstance(response, dict) and "items" in response:
+                data = response["items"]
+                has_more = response.get("has_more", False)
+                cursor = response.get("next_cursor")
             else:
                 data = response if isinstance(response, list) else []
                 has_more = False
@@ -149,7 +169,9 @@ class PennylaneClient:
                 break
 
             all_data.extend(data)
-            print(f"  Page {page}: {len(data)} enregistrements (total: {len(all_data)})")
+            print(
+                f"  Page {page}: {len(data)} enregistrements (total: {len(all_data)})"
+            )
 
             if not has_more and not cursor:
                 break
@@ -175,7 +197,7 @@ class PennylaneClient:
             Liste des changements [{id, operation, timestamp}, ...]
         """
         all_changes = []
-        params = {'start_date': start_date, 'per_page': 100}
+        params = {"start_date": start_date, "per_page": 100}
         cursor = None
         page = 1
 
@@ -183,14 +205,14 @@ class PennylaneClient:
 
         while True:
             if cursor:
-                params['cursor'] = cursor
+                params["cursor"] = cursor
 
-            response = self._make_request(f'/changelogs/{resource}', params)
+            response = self._make_request(f"/changelogs/{resource}", params)
 
-            if isinstance(response, dict) and 'items' in response:
-                changes = response['items']
-                has_more = response.get('has_more', False)
-                cursor = response.get('next_cursor')
+            if isinstance(response, dict) and "items" in response:
+                changes = response["items"]
+                has_more = response.get("has_more", False)
+                cursor = response.get("next_cursor")
             else:
                 changes = response if isinstance(response, list) else []
                 has_more = False
@@ -208,8 +230,13 @@ class PennylaneClient:
         print(f"[CHANGELOG] {len(all_changes)} changements trouves pour {resource}")
         return all_changes
 
-    def get_by_ids(self, endpoint: str, ids: List[int], batch_size: int = 100,
-                   extra_headers: Optional[Dict] = None) -> List[Dict]:
+    def get_by_ids(
+        self,
+        endpoint: str,
+        ids: List[int],
+        batch_size: int = 100,
+        extra_headers: Optional[Dict] = None,
+    ) -> List[Dict]:
         """
         Recupere des enregistrements par batch via filtre ID.
 
@@ -226,15 +253,17 @@ class PennylaneClient:
             return []
 
         all_records = []
-        batches = [ids[i:i + batch_size] for i in range(0, len(ids), batch_size)]
+        batches = [ids[i : i + batch_size] for i in range(0, len(ids), batch_size)]
 
-        print(f"[BATCH] Recuperation {len(ids)} enregistrements en {len(batches)} batch(s)...")
+        print(
+            f"[BATCH] Recuperation {len(ids)} enregistrements en {len(batches)} batch(s)..."
+        )
 
         for i, batch_ids in enumerate(batches, 1):
             filter_param = [{"field": "id", "operator": "in", "value": batch_ids}]
             params = {
-                'filter': str(filter_param).replace("'", '"'),
-                'per_page': batch_size
+                "filter": str(filter_param).replace("'", '"'),
+                "per_page": batch_size,
             }
             records = self._fetch_all_pages(endpoint, params, extra_headers)
             all_records.extend(records)
@@ -251,9 +280,11 @@ class PennylaneClient:
         """Recupere la liste des clients"""
         params = {}
         if updated_since:
-            params['filter[updated_at]'] = f"gte:{updated_since.strftime('%Y-%m-%dT%H:%M:%S')}"
+            params["filter[updated_at]"] = (
+                f"gte:{updated_since.strftime('%Y-%m-%dT%H:%M:%S')}"
+            )
 
-        data = self._fetch_all_pages('/customers', params)
+        data = self._fetch_all_pages("/customers", params)
 
         if not data:
             print("[INFO] Aucun client trouve")
@@ -263,13 +294,17 @@ class PennylaneClient:
         print(f"[INFO] DataFrame cree: {len(df)} lignes, {len(df.columns)} colonnes")
         return df
 
-    def get_customer_invoices(self, updated_since: Optional[datetime] = None) -> pd.DataFrame:
+    def get_customer_invoices(
+        self, updated_since: Optional[datetime] = None
+    ) -> pd.DataFrame:
         """Recupere la liste des factures clients"""
         params = {}
         if updated_since:
-            params['filter[updated_at]'] = f"gte:{updated_since.strftime('%Y-%m-%dT%H:%M:%S')}"
+            params["filter[updated_at]"] = (
+                f"gte:{updated_since.strftime('%Y-%m-%dT%H:%M:%S')}"
+            )
 
-        data = self._fetch_all_pages('/customer_invoices', params)
+        data = self._fetch_all_pages("/customer_invoices", params)
 
         if not data:
             print("[INFO] Aucune facture client trouvee")
@@ -283,9 +318,11 @@ class PennylaneClient:
         """Recupere la liste des fournisseurs"""
         params = {}
         if updated_since:
-            params['filter[updated_at]'] = f"gte:{updated_since.strftime('%Y-%m-%dT%H:%M:%S')}"
+            params["filter[updated_at]"] = (
+                f"gte:{updated_since.strftime('%Y-%m-%dT%H:%M:%S')}"
+            )
 
-        data = self._fetch_all_pages('/suppliers', params)
+        data = self._fetch_all_pages("/suppliers", params)
 
         if not data:
             print("[INFO] Aucun fournisseur trouve")
@@ -295,13 +332,17 @@ class PennylaneClient:
         print(f"[INFO] DataFrame cree: {len(df)} lignes, {len(df.columns)} colonnes")
         return df
 
-    def get_supplier_invoices(self, updated_since: Optional[datetime] = None) -> pd.DataFrame:
+    def get_supplier_invoices(
+        self, updated_since: Optional[datetime] = None
+    ) -> pd.DataFrame:
         """Recupere la liste des factures fournisseurs"""
         params = {}
         if updated_since:
-            params['filter[updated_at]'] = f"gte:{updated_since.strftime('%Y-%m-%dT%H:%M:%S')}"
+            params["filter[updated_at]"] = (
+                f"gte:{updated_since.strftime('%Y-%m-%dT%H:%M:%S')}"
+            )
 
-        data = self._fetch_all_pages('/supplier_invoices', params)
+        data = self._fetch_all_pages("/supplier_invoices", params)
 
         if not data:
             print("[INFO] Aucune facture fournisseur trouvee")
@@ -311,13 +352,17 @@ class PennylaneClient:
         print(f"[INFO] DataFrame cree: {len(df)} lignes, {len(df.columns)} colonnes")
         return df
 
-    def get_transactions(self, updated_since: Optional[datetime] = None) -> pd.DataFrame:
+    def get_transactions(
+        self, updated_since: Optional[datetime] = None
+    ) -> pd.DataFrame:
         """Recupere la liste des transactions bancaires"""
         params = {}
         if updated_since:
-            params['filter[updated_at]'] = f"gte:{updated_since.strftime('%Y-%m-%dT%H:%M:%S')}"
+            params["filter[updated_at]"] = (
+                f"gte:{updated_since.strftime('%Y-%m-%dT%H:%M:%S')}"
+            )
 
-        data = self._fetch_all_pages('/transactions', params)
+        data = self._fetch_all_pages("/transactions", params)
 
         if not data:
             print("[INFO] Aucune transaction trouvee")
@@ -331,9 +376,11 @@ class PennylaneClient:
         """Recupere la liste des produits/services"""
         params = {}
         if updated_since:
-            params['filter[updated_at]'] = f"gte:{updated_since.strftime('%Y-%m-%dT%H:%M:%S')}"
+            params["filter[updated_at]"] = (
+                f"gte:{updated_since.strftime('%Y-%m-%dT%H:%M:%S')}"
+            )
 
-        data = self._fetch_all_pages('/products', params)
+        data = self._fetch_all_pages("/products", params)
 
         if not data:
             print("[INFO] Aucun produit trouve")
@@ -350,8 +397,7 @@ class PennylaneClient:
     def get_ledger_entries(self) -> pd.DataFrame:
         """Recupere les ecritures comptables (grand livre general) via API v2"""
         data = self._fetch_all_pages(
-            '/ledger_entries',
-            extra_headers={'X-Use-2026-API-Changes': 'true'}
+            "/ledger_entries", extra_headers={"X-Use-2026-API-Changes": "true"}
         )
 
         if not data:
@@ -365,8 +411,7 @@ class PennylaneClient:
     def get_ledger_accounts(self) -> pd.DataFrame:
         """Recupere le plan comptable via API v2"""
         data = self._fetch_all_pages(
-            '/ledger_accounts',
-            extra_headers={'X-Use-2026-API-Changes': 'true'}
+            "/ledger_accounts", extra_headers={"X-Use-2026-API-Changes": "true"}
         )
 
         if not data:
@@ -379,7 +424,7 @@ class PennylaneClient:
 
     def get_bank_accounts(self) -> pd.DataFrame:
         """Recupere les comptes bancaires via API v2"""
-        data = self._fetch_all_pages('/bank_accounts')
+        data = self._fetch_all_pages("/bank_accounts")
 
         if not data:
             print("[INFO] Aucun compte bancaire trouve")
@@ -392,8 +437,7 @@ class PennylaneClient:
     def get_fiscal_years(self) -> pd.DataFrame:
         """Recupere les exercices fiscaux via API v2"""
         data = self._fetch_all_pages(
-            '/fiscal_years',
-            extra_headers={'X-Use-2026-API-Changes': 'true'}
+            "/fiscal_years", extra_headers={"X-Use-2026-API-Changes": "true"}
         )
 
         if not data:
@@ -416,14 +460,15 @@ class PennylaneClient:
         """
         body = {}
         if fiscal_year_id:
-            body['fiscal_year_id'] = fiscal_year_id
+            body["fiscal_year_id"] = fiscal_year_id
 
         print("[EXPORT] Lancement export FEC...")
-        response = self._make_post_request('/exports/fec', body)
+        response = self._make_post_request("/exports/fec", body)
         return self._poll_export(response)
 
-    def export_analytical_ledger(self, start_date: Optional[str] = None,
-                                  end_date: Optional[str] = None) -> Dict:
+    def export_analytical_ledger(
+        self, start_date: Optional[str] = None, end_date: Optional[str] = None
+    ) -> Dict:
         """
         Lance un export Grand Livre Analytique. Retourne l'URL de telechargement.
 
@@ -431,12 +476,12 @@ class PennylaneClient:
         """
         body = {}
         if start_date:
-            body['start_date'] = start_date
+            body["start_date"] = start_date
         if end_date:
-            body['end_date'] = end_date
+            body["end_date"] = end_date
 
         print("[EXPORT] Lancement export Grand Livre Analytique...")
-        response = self._make_post_request('/exports/analytical_general_ledger', body)
+        response = self._make_post_request("/exports/analytical_general_ledger", body)
         return self._poll_export(response)
 
     def _poll_export(self, initial_response: Dict, max_wait: int = 300) -> Dict:
@@ -450,11 +495,13 @@ class PennylaneClient:
         Returns:
             Reponse finale avec URL de telechargement
         """
-        export_id = initial_response.get('id')
-        status = initial_response.get('status', '')
-        download_url = initial_response.get('download_url') or initial_response.get('url')
+        export_id = initial_response.get("id")
+        status = initial_response.get("status", "")
+        download_url = initial_response.get("download_url") or initial_response.get(
+            "url"
+        )
 
-        if download_url and status in ('completed', 'done', ''):
+        if download_url and status in ("completed", "done", ""):
             print(f"[EXPORT] Export pret immediatement")
             return initial_response
 
@@ -468,19 +515,19 @@ class PennylaneClient:
         while time.time() - start < max_wait:
             time.sleep(5)
             try:
-                response = self._make_request(f'/exports/{export_id}')
-                status = response.get('status', '')
-                download_url = response.get('download_url') or response.get('url')
+                response = self._make_request(f"/exports/{export_id}")
+                status = response.get("status", "")
+                download_url = response.get("download_url") or response.get("url")
 
-                if status in ('completed', 'done') or download_url:
+                if status in ("completed", "done") or download_url:
                     print(f"[EXPORT] Export {export_id} termine")
                     return response
-                elif status in ('failed', 'error'):
+                elif status in ("failed", "error"):
                     raise Exception(f"Export {export_id} echoue: {response}")
 
                 print(f"  Status: {status}...")
             except Exception as e:
-                if 'echoue' in str(e):
+                if "echoue" in str(e):
                     raise
                 print(f"  Polling erreur (retry): {e}")
 
@@ -495,13 +542,14 @@ class PennylaneClient:
         if response.status_code != 200:
             raise Exception(f"Erreur telechargement: {response.status_code}")
 
-        content_type = response.headers.get('Content-Type', '')
+        content_type = response.headers.get("Content-Type", "")
 
-        if 'csv' in content_type or url.endswith('.csv'):
+        if "csv" in content_type or url.endswith(".csv"):
             import io
-            df = pd.read_csv(io.StringIO(response.text), sep=';')
+
+            df = pd.read_csv(io.StringIO(response.text), sep=";")
         else:
-            df = pd.read_csv(pd.io.common.StringIO(response.text), sep='\t')
+            df = pd.read_csv(pd.io.common.StringIO(response.text), sep="\t")
 
         print(f"[DOWNLOAD] {len(df)} lignes chargees")
         return df
@@ -514,10 +562,10 @@ class PennylaneClient:
         """Teste la connexion API et affiche les informations utilisateur"""
         try:
             print("[TEST] Test de connexion API...")
-            response = self._make_request('/me')
+            response = self._make_request("/me")
 
-            user = response.get('user', {})
-            company = response.get('company', {})
+            user = response.get("user", {})
+            company = response.get("company", {})
 
             print(f"[OK] Connexion reussie")
             print(f"  Utilisateur: {user.get('first_name')} {user.get('last_name')}")
@@ -529,7 +577,9 @@ class PennylaneClient:
             print(f"[ERREUR] Echec connexion: {e}")
             return False
 
-    def fetch_all_raw(self, endpoint: str, extra_headers: Optional[Dict] = None) -> List[Dict]:
+    def fetch_all_raw(
+        self, endpoint: str, extra_headers: Optional[Dict] = None
+    ) -> List[Dict]:
         """Acces direct a _fetch_all_pages pour usage dans incremental_sync"""
         return self._fetch_all_pages(endpoint, extra_headers=extra_headers)
 
@@ -542,7 +592,7 @@ if __name__ == "__main__":
 
     load_dotenv()
 
-    client = PennylaneClient(env_path='.env')
+    client = PennylaneClient(env_path=".env")
 
     if client.test_connection():
         print()
